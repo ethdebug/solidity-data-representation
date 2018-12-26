@@ -5,8 +5,8 @@ For writers of line debuggers and other debugging-related utilities.
 
 ---
 
-<object data="https://github.com/ethdebug/solidity-data-representation/raw/mkd/src/storage.svg" type="image/svg+xml">
-  <img src="https://github.com/ethdebug/solidity-data-representation/raw/mkd/src/storage.png" />
+<object data="storage.svg" type="image/svg+xml">
+  <img src="storage.png" />
 </object>
 
 
