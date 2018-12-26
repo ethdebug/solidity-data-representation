@@ -1,4 +1,5 @@
 const fs = require("fs");
+const del = require("del");
 const path = require("path");
 const { src, dest, task, watch, series } = require('gulp');
 const Gitdown = require('@gnd/gitdown');
@@ -11,6 +12,8 @@ task('static', async () => {
   if (!fs.existsSync("dist")) {
     fs.mkdirSync("dist");
   }
+
+  await src("static/*").pipe(dest("dist"));
 });
 
 task('gitdown', async () => {
@@ -69,12 +72,17 @@ task('pandoc', () => {
       ext: "md"
     }))
     .pipe(debug({ title: "pandoc output:" }))
-    .pipe(rename("output.md"))
+    .pipe(rename("index.md"))
     .pipe(replace("# User Content", "# Data Representation in Solidity"))
     .pipe(dest("dist"));
+
 });
 
-task('build', series("static", "gitdown", "pandoc"));
+task('clean:tmp', () => {
+  return del(["dist/_merged.md"]);
+});
+
+task('build', series("static", "gitdown", "pandoc", "clean:tmp"));
 
 task('watch', series(["build", () => {
   watch('./src', series(['build']));
