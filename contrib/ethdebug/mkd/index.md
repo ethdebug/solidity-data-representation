@@ -1,5 +1,5 @@
 <a name="user-content"></a>
-# User Content
+# Data Representation in Solidity
 
 For writers of line debuggers and other debugging-related utilities.
 
