@@ -24,7 +24,7 @@
 ---
 
 <p align="center">
-:zap:
+⚡
 </p>
 
 ---
