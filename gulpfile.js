@@ -66,6 +66,7 @@ task('fix-up', () => {
     .pipe(debug({ title: "merged" }))
     .pipe(rename("index.md"))
     .pipe(replace("# User Content", "# Data Representation in Solidity"))
+    .pipe(replace("<a name=\"user-content\"></a>\n", ""))
     .pipe(dest("dist"));
 });
 
