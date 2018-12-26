@@ -869,7 +869,7 @@ leave a storage pointer uninitialized, it is not legal to delete one.)
 ---
 
 <p align="center">
-:zap:
+⚡
 </p>
 
 ---
