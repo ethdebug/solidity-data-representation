@@ -75,7 +75,7 @@ copy-docs () {
 
   echo "Copying build output..."
   # copy gh-pages output
-  cp ${SOURCE_DIR}/dist/output.md ${destination}/index.md
+  cp -R ${SOURCE_DIR}/dist/* ${destination}
 }
 
 publish () {
