@@ -5,7 +5,10 @@
   },
   "devDependencies": {
     "@gnd/gitdown": "2.5.3",
+    "del": "^3.0.0",
     "gulp": "^4.0.0",
-    "gulp-debug": "^4.0.0"
+    "gulp-debug": "^4.0.0",
+    "gulp-rename": "^1.4.0",
+    "gulp-replace": "^1.0.0"
   }
 }
