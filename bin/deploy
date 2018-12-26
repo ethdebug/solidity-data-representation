@@ -74,6 +74,7 @@ copy-docs () {
   mkdir -p "${destination}"
 
   echo "Copying build output..."
+  ls ${SOURCE_DIR}/dist/*
   # copy gh-pages output
   cp -R ${SOURCE_DIR}/dist/* ${destination}
 }
