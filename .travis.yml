@@ -2,6 +2,7 @@ language: node_js
 node_js:
   - "8"
 before_install:
+  - sudo apt-get install pandoc
   - yarn install --network-concurrency 1
 
 after_success:
