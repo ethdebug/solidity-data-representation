@@ -18,10 +18,10 @@
     esutils "^2.0.2"
     js-tokens "^4.0.0"
 
-"@gnd/gitdown@2.5.2":
-  version "2.5.2"
-  resolved "https://registry.yarnpkg.com/@gnd/gitdown/-/gitdown-2.5.2.tgz#9f780ad581a5900fd20001d32ec634060f2eaa8f"
-  integrity sha512-L6ASbQBHJp7ap3HqJcDg/Z/2phauBsBVRke7Y7d1OkCocsy4h09pHgSTvrx0tTB1GEc0FtgpCKxgrMi7ZoewBA==
+"@gnd/gitdown@2.5.3":
+  version "2.5.3"
+  resolved "https://registry.yarnpkg.com/@gnd/gitdown/-/gitdown-2.5.3.tgz#37fd66ad23ff997cd76945481440a5727b0aab39"
+  integrity sha512-cQsve8HCyo/frx587HsaVyCUk4uSxbkl6SCn26vlkmyPV9oGkZz6fW8L1HK3eUbxrvWDFh8WMkZYB+Bd5ruiOw==
   dependencies:
     bluebird "^3.5.2"
     deadlink "^1.1.3"

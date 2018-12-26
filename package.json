@@ -4,7 +4,7 @@
     "test": "exit 0"
   },
   "devDependencies": {
-    "@gnd/gitdown": "2.5.2",
+    "@gnd/gitdown": "2.5.3",
     "del": "^3.0.0",
     "gulp": "^4.0.0",
     "gulp-debug": "^4.0.0",
