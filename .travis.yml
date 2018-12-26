@@ -6,4 +6,5 @@ before_install:
 
 after_success:
   - yarn build
+  - ls dist
   - ./bin/deploy
