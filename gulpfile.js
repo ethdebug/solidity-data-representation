@@ -1,12 +1,8 @@
 const fs = require("fs");
-const del = require("del");
 const path = require("path");
 const { src, dest, task, watch, series } = require('gulp');
 const Gitdown = require('@gnd/gitdown');
-const rename = require("gulp-rename");
 const debug = require("gulp-debug");
-const pandoc = require("gulp-pandoc");
-const replace = require("gulp-replace");
 
 task('static', async () => {
   if (!fs.existsSync("dist")) {
@@ -59,30 +55,10 @@ task('gitdown', async () => {
     }
   });
 
-  await gitdown.writeFile('dist/_merged.md');
+  await gitdown.writeFile('dist/index.md');
 });
 
-task('pandoc', () => {
-  return src("dist/_merged.md")
-    .pipe(debug({ title: "merged" }))
-    .pipe(pandoc({
-      from: "gfm",
-      to: "gfm",
-      args: ['--wrap=none'],
-      ext: "md"
-    }))
-    .pipe(debug({ title: "pandoc output:" }))
-    .pipe(rename("index.md"))
-    .pipe(replace("# User Content", "# Data Representation in Solidity"))
-    .pipe(dest("dist"));
-
-});
-
-task('clean:tmp', () => {
-  return del(["dist/_merged.md"]);
-});
-
-task('build', series("static", "gitdown", "pandoc", "clean:tmp"));
+task('build', series("static", "gitdown"));
 
 task('watch', series(["build", () => {
   watch('./src', series(['build']));
