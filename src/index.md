@@ -20,3 +20,11 @@
 
 {"gitdown": "contents", "maxLevel": 5, "rootId": "user-content-locations-in-detail"}
 {"gitdown": "include", "file": "./locations-detailed.md"}
+
+---
+
+<p align="center">
+:zap:
+</p>
+
+---

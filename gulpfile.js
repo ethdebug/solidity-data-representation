@@ -7,6 +7,12 @@ const debug = require("gulp-debug");
 const pandoc = require("gulp-pandoc");
 const replace = require("gulp-replace");
 
+task('static', async () => {
+  if (!fs.existsSync("dist")) {
+    fs.mkdirSync("dist");
+  }
+});
+
 task('gitdown', async () => {
   if (!fs.existsSync("dist")) {
     fs.mkdirSync("dist");
@@ -25,12 +31,27 @@ task('gitdown', async () => {
   });
   gitdown.setLogger(console);
 
+  const contents = {
+    ref: "#user-content-contents",
+    title: "Back to contents"
+  };
+
   gitdown.registerHelper("scroll-up", {
     compile: (config) => {
+      const up = {
+        ref: config.upRef || contents.ref,
+        title: config.upTitle || contents.title
+      };
+
+      const down = {
+        ref: config.downRef,
+        title: config.downTitle
+      };
+
       if (config.downRef) {
-        return `<sup>[ [&and;](#user-content-contents) _Back to contents_ | _${config.downTitle}_ [&or;](${config.downRef}) ]</sup>`;
+        return `<sup>[ [&and;](${up.ref}) _${up.title}_ | _${down.title}_ [&or;](${down.ref}) ]</sup>`;
       } else {
-        return "<sup>[ [&and;](#user-content-contents) _Back to contents_ ]</sup>";
+        return `<sup>[ [&and;](${up.ref}) _${up.title}_ ]</sup>`;
       }
     }
   });
@@ -53,7 +74,7 @@ task('pandoc', () => {
     .pipe(dest("dist"));
 });
 
-task('build', series("gitdown", "pandoc"));
+task('build', series("static", "gitdown", "pandoc"));
 
 task('watch', series(["build", () => {
   watch('./src', series(['build']));

@@ -1,4 +1,7 @@
 {
+  "scripts": {
+    "build": "gulp"
+  },
   "devDependencies": {
     "@gnd/gitdown": "2.5.2",
     "gulp": "^4.0.0",

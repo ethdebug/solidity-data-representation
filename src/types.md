@@ -1,4 +1,5 @@
 ### Terminology
+{"gitdown": "scroll-up", "upRef": "#user-content-types-overview", "upTitle": "Back to Types Overview"}
 
 There are a number of ways of dividing up the types into classes.  The system
 I'll use here is my own, based on what I think is useful here.
@@ -46,6 +47,7 @@ consistently speak of "elements" rather than "values" or "children" or
 "members".
 
 ### Types and locations
+{"gitdown": "scroll-up", "upRef": "#user-content-types-overview", "upTitle": "Back to Types Overview"}
 
 What types can go in what locations?
 
@@ -87,6 +89,7 @@ mentioned above):
 | Calldata | Only as elements of other types, with restrictions | Yes                   | Yes, excluding mappings | Illegal                    | To calldata (only as elements of other types) |
 
 ### Overview of the types: Direct types
+{"gitdown": "scroll-up", "upRef": "#user-content-types-overview", "upTitle": "Back to Types Overview"}
 
 #### Basics of direct types: Packing and padding
 
@@ -196,6 +199,7 @@ So, the question of how these are presently represented when stored, is that
 they are not.
 
 ### Overview of the types: Multivalue types
+{"gitdown": "scroll-up", "upRef": "#user-content-types-overview", "upTitle": "Back to Types Overview"}
 
 The multivalue types are `type[n]` (here `n` must be positive), which has `n`
 elements of type `type`; and the various user-defined `struct` types, whose
@@ -216,6 +220,7 @@ to each of its element variables.
 (There's no table for this section as there would be little point.)
 
 ### Overview of the types: Lookup types
+{"gitdown": "scroll-up", "upRef": "#user-content-types-overview", "upTitle": "Back to Types Overview"}
 
 The lookup types are `type[]`; `mapping(keyType => elementType)`; `bytes`; and
 `string`.
@@ -262,6 +267,7 @@ Note that mappings have other special features -- e.g., they cannot be copied or
 deleted -- but we will not go into that here.
 
 ### Overview of the types: Pointer types
+{"gitdown": "scroll-up", "upRef": "#user-content-types-overview", "upTitle": "Back to Types Overview"}
 
 Pointers always take up a full word.  See the appropriate location section for
 information on pointers to that location ([1](#user-content-locations-in-detail-memory-in-detail-pointers-to-memory),

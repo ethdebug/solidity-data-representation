@@ -1,4 +1,5 @@
 ### The stack in (some) detail
+{"gitdown": "scroll-up", "upRef": "#user-content-locations-in-detail", "upTitle": "Back to Locations in Detail"}
 
 The stack, as mentioned above, can hold only direct types and pointer types.
 
@@ -27,6 +28,7 @@ by output parameters, in the order they were given.  Anonymous output parameters
 are treated the same as named output parameters for these purposes.
 
 ### Memory in detail
+{"gitdown": "scroll-up", "upRef": "#user-content-locations-in-detail", "upTitle": "Back to Locations in Detail"}
 
 We won't discuss layout in memory since, as mentioned, we only access it via
 pointers.  We'll break this down into sections depending on what type of
@@ -84,8 +86,9 @@ represent any empty variable of lookup type in memory, and in fact it's used as
 a default value for memory pointers of lookup type.
 
 ### Calldata in detail
+{"gitdown": "scroll-up", "upRef": "#user-content-locations-in-detail", "upTitle": "Back to Locations in Detail"}
 
-Calldata is largely the same as [memory](#memory-in-detail); so rather than
+Calldata is largely the same as [memory](#user-content-locations-in-detail-memory-in-detail); so rather than
 describing calldata from scratch, we will simply describe how it differs from
 memory.
 
@@ -99,7 +102,7 @@ it.)
 
 The first four bytes of calldata are the function selector, and are not followed
 by any padding.  As such, in calldata, we consider words and slots to begin not
-on the [usual word boundaries](#the-locations-basics) (multiples of `0x20`) but
+on the [usual word boundaries](#user-content-locations-basics) (multiples of `0x20`) but
 rather to begin offset by 4-bytes; "slots" in calldata will begin at bytes whose
 address is congruent to `0x4` modulo `0x20`.  (Since calldata is byte-based
 rather than word-based, this offset is not disastrous like it would be in, say,
@@ -117,15 +120,16 @@ the stack or into memory, we will ignore this.
 
 #### Calldata: Direct types and pointer types
 
-Direct types are the [same as in
-memory](#memory-direct-types-and-pointer-types).  Nothing more needs to be said.
-[Pointers to calldata](#pointers-to-calldata) are a bit different from [pointers
-to memory](#user-content-locations-in-detail-memory-in-detail-pointers-to-memory), but you can see below about that.
+Direct types are the [same as in memory](#user-content-locations-in-detail-memory-in-detail-memory-direct-types-and-pointer-types).
+Nothing more needs to be said. [Pointers to calldata](#user-content-locations-in-detail-calldata-in-detail-pointers-to-calldata)
+are a bit different from
+[pointers to memory](#user-content-locations-in-detail-memory-in-detail-pointers-to-memory),
+but you can see below about that.
 
 #### Calldata: Multivalue and lookup types (reference types)
 
 In order to understand reference types in calldata, we need the distinction of
-*static* and *dynamic* types that was [introduced earlier](#terminology).
+*static* and *dynamic* types that was [introduced earlier](#user-content-types-overview-terminology).
 
 With that in hand, then, variables of reference type in calldata are stored
 similarly to in memory ([1](#user-content-locations-in-detail-memory-in-detail-memory-multivalue-types),
@@ -133,7 +137,7 @@ similarly to in memory ([1](#user-content-locations-in-detail-memory-in-detail-m
 static reference type are *not* stored as pointers, but are simply stored
 inline; so unlike in memory, elements may take up multiple words.  Elements of
 dynamic type are still stored as pointers (but see the [section
-below](#pointers-to-calldata) about how those work).
+below](#user-content-locations-in-detail-calldata-in-detail-pointers-to-calldata) about how those work).
 
 Also, structs that contain mappings are entirely illegal in calldata, unlike
 in memory where the mappings are simply omitted.
@@ -206,6 +210,7 @@ since calldata, like memory, is padded (and these pointers are relative rather
 than absolute).
 
 ### Storage in detail
+{"gitdown": "scroll-up", "upRef": "#user-content-locations-in-detail", "upTitle": "Back to Locations in Detail"}
 
 Storage, unlike the other locations mentioned thus far, is a
 [packed](#user-content-types-overview-overview-of-the-types-direct-types-basics-of-direct-types-packing-and-padding), not padded, location.
@@ -324,7 +329,7 @@ here has been converted to a string of bytes -- something that is meaningful for
 every [elementary type](#user-content-types-overview-overview-of-the-types-lookup-types) (the legal key
 types).  For the elementary types which are direct, the value can be converted
 to a string of bytes by the representations listed in the [section on direct
-types](#representations-of-direct-types), with the lengths as listed in the
+types](#user-content-types-overview-overview-of-the-types-direct-types-representations-of-direct-types), with the lengths as listed in the
 [direct types table](#user-content-types-overview-overview-of-the-types-direct-types-table-of-direct-types); for the lookup elementary type
 `bytes` ([and `string`](#user-content-types-overview-overview-of-the-types-lookup-types)), well, this by
 itself represents a string of bytes!  Similarly, the position `p` is regarded as
