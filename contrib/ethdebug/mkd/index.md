@@ -4,10 +4,7 @@ For writers of line debuggers and other debugging-related utilities.
 
 ---
 
-<object data="storage.svg" type="image/svg+xml">
-  <img src="storage.png" />
-</object>
-
+![Solidity storage allocation example layout](storage.svg)
 
 | Author | Harry Altman [@haltman-at] |
 | -----------:|:------------ |
