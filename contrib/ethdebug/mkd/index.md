@@ -11,6 +11,7 @@ For writers of line debuggers and other debugging-related utilities.
 | Published | 2018-12-26 - Boxing Day |
 | Copyright | 2018 Truffle |
 | License | <a rel="license" href="http://creativecommons.org/licenses/by/4.0/"><img alt="Creative Commons License" style="border-width:0" src="https://i.creativecommons.org/l/by/4.0/88x31.png" /> |
+| Document Source | [ethdebug/solidity-data-representation](https://github.com/ethdebug/solidity-data-representation) |
 
 
 ---
