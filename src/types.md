@@ -147,7 +147,7 @@ Some remarks:
    `assert`-style exception (i.e. it reverts the transaction and consumes all
    available gas).  In storage, it is `0`, which if called has the same effect.
 5. The `N` in `uintN` and `intN` must be a multiple of 8, from 8 to 256.  The
-   `M` in `ufixedMxN` and `fixedMxN` must be a multiple of 8, from 8 to 128,
+   `M` in `ufixedMxN` and `fixedMxN` must be a multiple of 8, from 8 to 256,
    while `N` must be from 0 to 80.  The `N` in `bytesN` must be from 1 to 32.
 6. Function types are, of course, more complex than just their division into
    `internal` and `external`; they also have input parameter types, output
