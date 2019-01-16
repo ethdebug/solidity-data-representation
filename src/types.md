@@ -134,18 +134,23 @@ for more detail on how these types are actually represented.
 Some remarks:
 
 1. As the table states, external functions act a bit oddly on the stack; see the
-   [section on the stack](#user-content-locations-in-detail-the-stack-in-some-detail) for details.
+   [section on the stack](#user-content-locations-in-detail-the-stack-in-some-detail)
+   for details.
 2. The `ufixedMxN` and `fixedMxN` types are not implemented yet.  Their listed
    properies are largely inferred based on what we can expect.
 3. Some direct types have aliases; these have not been listed in the above table.
    `uint` and `int` are aliases for `uint256` and `int256`; `ufixed` and `fixed`
    for `ufixed128x18` and `fixed128x18`; and `byte` for `bytes1`.
-4. Each direct type's default value is simply whatever value is represented by a
-   string of all zero bytes, with the one exception of internal functions in
-   locations other than storage.  In non-storage locations, the default value
-   for an internal function variable is a special function which throws an
+4. Each direct type's default value is simply whatever value is represented by
+   a string of all zero bytes, with the one exception of internal functions in
+   locations other than storage.  In non-storage locations, the default value for
+   an internal function variable is a special function which throws an
    `assert`-style exception (i.e. it reverts the transaction and consumes all
-   available gas).  In storage, it is `0`, which if called has the same effect.
+   available gas).  This special function has the bytecode `0x5bfe` (a `JUMPDEST`
+   followed by an `INVALID`), but will only be included in the contract if
+   Solidity deems it necessary.  In storage, the default value for an internal
+   function is  `0`, which if called has the same effect, because the
+   instruction at address `0` will never be a `JUMPDEST`.
 5. The `N` in `uintN` and `intN` must be a multiple of 8, from 8 to 256.  The
    `M` in `ufixedMxN` and `fixedMxN` must be a multiple of 8, from 8 to 256,
    while `N` must be from 0 to 80.  The `N` in `bytesN` must be from 1 to 32.
