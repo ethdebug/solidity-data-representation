@@ -82,6 +82,8 @@ writing._
         * [Calldata: Multivalue and lookup types (reference types)](#user-content-locations-in-detail-calldata-in-detail-calldata-multivalue-and-lookup-types-reference-types)
             * [The special variable `msg.data`](#user-content-locations-in-detail-calldata-in-detail-calldata-multivalue-and-lookup-types-reference-types-the-special-variable-msg-data)
         * [Pointers to calldata](#user-content-locations-in-detail-calldata-in-detail-pointers-to-calldata)
+        * [Pointers to calldata from calldata](#user-content-locations-in-detail-calldata-in-detail-pointers-to-calldata-from-calldata)
+        * [Pointers to calldata from the stack](#user-content-locations-in-detail-calldata-in-detail-pointers-to-calldata-from-the-stack)
     * [Storage in detail](#user-content-locations-in-detail-storage-in-detail)
         * [Storage: Inheritance](#user-content-locations-in-detail-storage-in-detail-storage-inheritance)
         * [Storage: Direct types](#user-content-locations-in-detail-storage-in-detail-storage-direct-types)
@@ -491,6 +493,8 @@ it's illegal to delete them.
     * [Calldata: Multivalue and lookup types (reference types)](#user-content-locations-in-detail-calldata-in-detail-calldata-multivalue-and-lookup-types-reference-types)
         * [The special variable `msg.data`](#user-content-locations-in-detail-calldata-in-detail-calldata-multivalue-and-lookup-types-reference-types-the-special-variable-msg-data)
     * [Pointers to calldata](#user-content-locations-in-detail-calldata-in-detail-pointers-to-calldata)
+    * [Pointers to calldata from calldata](#user-content-locations-in-detail-calldata-in-detail-pointers-to-calldata-from-calldata)
+    * [Pointers to calldata from the stack](#user-content-locations-in-detail-calldata-in-detail-pointers-to-calldata-from-the-stack)
 * [Storage in detail](#user-content-locations-in-detail-storage-in-detail)
     * [Storage: Inheritance](#user-content-locations-in-detail-storage-in-detail-storage-inheritance)
     * [Storage: Direct types](#user-content-locations-in-detail-storage-in-detail-storage-direct-types)
@@ -509,11 +513,16 @@ location](#user-content-types-overview-overview-of-the-types-direct-types-basics
 padded to a full word in the manner described in the [direct types
 table](#user-content-types-overview-overview-of-the-types-direct-types-table-of-direct-types).
 
-The one special case here that must be noted here is external functions.  An
+There are two special cases that must be noted here, that each take up two words
+instead of one.  The first special case is that of external functions.  An
 external function is represented by a 20-byte address and a 4-byte selector;
 these are stored in two separate words, with the address in the bottom word and
 the selector in the top word.  Both these are zero-padded on the *left*, not the
 right [like in the other padded locations](#user-content-types-overview-overview-of-the-types-direct-types-table-of-direct-types).
+
+The second two-word special case is that of pointers to calldata lookup types;
+see the section on [pointers to calldata from the
+stack](#user-content-locations-in-detail-calldata-in-detail-pointers-to-calldata-pointers-to-calldata-from-the-stack) for details.
 
 The stack is a bit unpredictable in terms of data layout, as it's also used as
 working space.  However, the location of local variables can be figured out by
@@ -689,22 +698,23 @@ digression and discuss pointers to calldata.
 <a name="user-content-locations-in-detail-calldata-in-detail-pointers-to-calldata"></a>
 #### Pointers to calldata
 
-Pointers to calldata are different depending on whether they are from the stack
-or from calldata.
+Pointers to calldata are different depending on whether they are from calldata
+or from the stack; and pointers to calldata from the stack are different
+depending on whether they point to a multivalue type (i.e. a `type[n]`) or to a
+lookup type.
 
-Pointers to calldata from the stack work like [pointers to
-memory](#user-content-locations-in-detail-memory-in-detail-pointers-to-memory): They are absolute, given in bytes, and always
-point to the start of a word.  In calldata, though, the [start of a
-word](#user-content-locations-in-detail-calldata-in-detail-slots-in-calldata-and-the-offset) is congruent to `0x4` modulo `0x20`,
-rather than being a multiple of `0x20`.  There is also no need for any sort of
-[null pointer](#user-content-locations-in-detail-memory-in-detail-pointers-to-memory) in calldata, and so no equivalent exists.
+Note, by the way, that there is no need for any sort of
+[null pointer](#user-content-locations-in-detail-pointers-to-memory) in calldata, and so no equivalent exists.
 (Variables in calldata of lookup type may be empty, of course, but distinct
 empty calldata variables are kept separate from another, not coalesced into a
 single null location like in memory.)
 
-Pointers to calldata from calldata, on the other hand, are relative, though in a
-slightly unusual manner.  They are also given in bytes, but are relative not to
-the current location, but rather to the [structure they are a part
+<a name="user-content-locations-in-detail-calldata-in-detail-pointers-to-calldata-from-calldata"></a>
+#### Pointers to calldata from calldata
+
+Pointers to calldata from calldata are relative, though in a slightly unusual
+manner.  They are also given in bytes, but are relative not to the current
+location, but rather to the [structure they are a part
 of](#user-content-locations-in-detail-calldata-in-detail-calldata-multivalue-and-lookup-types-reference-types) (since they never
 stand alone.)
 
@@ -720,6 +730,25 @@ list of elements it is contained in.
 Note that pointers to calldata from calldata will always be multiples of `0x20`,
 since calldata, like memory, is padded (and these pointers are relative rather
 than absolute).
+
+<a name="user-content-locations-in-detail-calldata-in-detail-pointers-to-calldata-from-the-stack"></a>
+#### Pointers to calldata from the stack
+
+Pointers to a `type[n] calldata` (the only legal multivalue type in calldata,
+presently) from the stack work like [pointers to memory](#user-content-locations-in-detail-pointers-to-memory):
+They are absolute, given in bytes, and always point to the start of a word.  In
+calldata, though, the [start of a word](#user-content-locations-in-detail-calldata-in-detail-slots-in-calldata-and-the-offset)
+is congruent to `0x4` modulo `0x20`, rather than being a multiple of `0x20`.
+
+Pointers to calldata lookup types from the stack take up two words on the stack
+rather than just one.  The bottom word is a pointer -- absolute and given in
+bytes -- but points not to the word containing the length, but rather the start
+of the content, i.e., the word after the length (as described in the section on
+[lookup types in memory](#user-content-locations-in-detail-memory-in-detail-memory-lookup-types)), since [lookup types in
+calldata](#user-content-locations-in-detail-calldata-in-detail-calldata-multivalue-and-lookup-types-reference-types) are
+similar).  The top word contains the length.  Note, obviously, that if the length is
+zero then the value of the pointer is irrelevant (and the word it points to may
+contain unrelated data).
 
 <a name="user-content-locations-in-detail-storage-in-detail"></a>
 ### Storage in detail
