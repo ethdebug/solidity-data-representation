@@ -263,9 +263,9 @@ will be described in more detail later ([1](#user-content-locations-in-detail-me
 [2](#user-content-locations-in-detail-the-stack-in-some-detail)).)  The exact method of padding varies by type,
 as detailed in [the table below](#user-content-types-overview-overview-of-the-types-direct-types-table-of-direct-types).
 
-(Again, note that for calldata we are using a somewhat unusual notion of slot;
-[see the calldata section](#user-content-locations-in-detail-calldata-in-detail-slots-in-calldata-and-the-offset) for more
-information.)
+(Again, note that slots in memory and calldata are [always relative to the
+beginning of the object being decoded](#user-content-the-locations-basics), and not based on
+absolute multiples of `0x20`.)
 
 <a name="user-content-types-overview-overview-of-the-types-direct-types-table-of-direct-types"></a>
 #### Table of direct types
