@@ -44,5 +44,5 @@ original value in calldata will always be copied onto the stack before use).
 Obviously the value still exists in calldata, but since no variable points
 there, it's not our concern.
 
-_**Note**: This document pertains to **Solidity v0.5.2**, current as of this
+_**Note**: This document pertains to **Solidity v0.5.3**, current as of this
 writing._
