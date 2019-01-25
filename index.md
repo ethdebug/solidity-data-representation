@@ -4,7 +4,7 @@ For writers of line debuggers and other debugging-related utilities.
 
 ---
 
-![Solidity storage allocation example layout](storage.svg)
+![Solidity storage allocation example layout](storage.png)
 
 | Author | Harry Altman [@haltman-at] |
 | -----------:|:------------ |
@@ -46,7 +46,7 @@ original value in calldata will always be copied onto the stack before use).
 Obviously the value still exists in calldata, but since no variable points
 there, it's not our concern.
 
-_**Note**: This document pertains to **Solidity v0.5.2**, current as of this
+_**Note**: This document pertains to **Solidity v0.5.3**, current as of this
 writing._
 
 
@@ -103,20 +103,25 @@ ignore returndata entirely.  There are also some other "special locations" that
 I will mention briefly in the calldata section but will mostly ignore.)
 
 The stack and storage are made of words ("slots"), while memory and calldata are
-made of bytes; however, we will basically ignore this distinction.  We will, for
-the stack and storage, conventionally consider the large end of each word to be
-the earlier (left) end; and, for the other locations, conventionally consider
-the location as divided up into words ("slots") of 32 bytes, with the earlier
-end of each word being the large end.  Or, in other words, everything is
-big-endian (or construed as big-endian) unless stated otherwise.  With this
-convention, we can ignore the distinction between the slot-based locations and
-the byte-based locations.  (My apologies in advance for the abuse of terminology
-that results from this, but I think using this convention here saves more
-trouble than it causes.)
+made of bytes; however, we will use some conventions to ignore this distinction.
+We will, for the stack and storage, conventionally consider the large end of
+each word to be the earlier (left) end; that is to say, everything is big-endian
+unless stated otherwise.
 
-(For calldata, we will actually use a slightly different convention, as
-[detailed later](#user-content-locations-in-detail-calldata-in-detail-slots-in-calldata-and-the-offset),
-but you can ignore that for now.)
+The other locations we will consider as conventionally divided up into words
+("slots") of 32 bytes each, with the earlier end of each word being the large
+end; however, we will start these slots at the beginning of the object we are
+decoding, and objects do not always start on multiples of `0x20`, so the slot
+boundaries may not be the conventional ones.  In any case, regardless of the
+starting point, everything is construed as big-endian unless stated otherwise.
+
+With these conventions, we can ignore the distinction between the slot-based
+locations and the byte-based locations.  (My apologies in advance for the abuse
+of terminology that results from this, but I think using these conventions here
+saves more trouble than it causes.)
+
+(For what its worth, objects in calldata always start at a [4-byte
+offset](#user-content-locations-in-detail-calldata-in-detail-slots-in-calldata-and-the-offset) from a multiple of `0x20`.)
 
 Memory and calldata will always be accessed through pointers to such; as such,
 we will only discuss concrete data layout for storage and (a little bit) for the
@@ -258,9 +263,9 @@ will be described in more detail later ([1](#user-content-locations-in-detail-me
 [2](#user-content-locations-in-detail-the-stack-in-some-detail)).)  The exact method of padding varies by type,
 as detailed in [the table below](#user-content-types-overview-overview-of-the-types-direct-types-table-of-direct-types).
 
-(Again, note that for calldata we are using a somewhat unusual notion of slot;
-[see the calldata section](#user-content-locations-in-detail-calldata-in-detail-slots-in-calldata-and-the-offset) for more
-information.)
+(Again, note that slots in memory and calldata are [always relative to the
+beginning of the object being decoded](#user-content-the-locations-basics), and not based on
+absolute multiples of `0x20`.)
 
 <a name="user-content-types-overview-overview-of-the-types-direct-types-table-of-direct-types"></a>
 #### Table of direct types
@@ -586,14 +591,15 @@ above](#user-content-locations-in-detail-memory-in-detail-memory-multivalue-type
 A `bytes` is represented by a slot containing the length of the bytestring,
 followed by a sequence of slots containing the bytestring; the bytes in the
 string are *not* individually padded, but rather are simply stored in sequence.
-Since the last slot may not contain a full 32 bytes, it is zero-padded on the
-right.
+Usually the bytestring as a whole will be zero-padded on the right so as to
+make it a whole number of words, but sometimes it is not.
 
 <a name="user-content-locations-in-detail-memory-in-detail-pointers-to-memory"></a>
 #### Pointers to memory
 
-Pointers to memory are absolute and given in bytes.  Since memory is padded, all
-pointers will point to the start of a word and thus be a multiple of `0x20`.
+Pointers to memory are absolute and given in bytes.  Since memory is padded,
+pointers will usually be a multiple of `0x20`, but due to the existence of
+occasional unpadded bytestrings there can be exceptions.
 
 The pointer `0x60` is something of a null pointer; it points to a reserved slot
 which is always zero.  By the previous section, this slot can therefore
@@ -608,32 +614,22 @@ Calldata is largely the same as [memory](#user-content-locations-in-detail-memor
 describing calldata from scratch, we will simply describe how it differs from
 memory.
 
-Importantly, we will use a different convention when talking about "slots" in
-calldata; see the [following subsection](#user-content-locations-in-detail-calldata-in-detail-slots-in-calldata-and-the-offset).
-(Although it's not *that* important, since, like with memory, we only access
-calldata through pointers.  You just don't want to find yourself surprised by
-it.)
-
 <a name="user-content-locations-in-detail-calldata-in-detail-slots-in-calldata-and-the-offset"></a>
 #### Slots in calldata and the offset
 
 The first four bytes of calldata are the function selector, and are not followed
 by any padding.  As such, in calldata, we consider words and slots to begin not
-on the [usual word boundaries](#user-content-locations-basics) (multiples of `0x20`) but
-rather to begin offset by 4-bytes; "slots" in calldata will begin at bytes whose
-address is congruent to `0x4` modulo `0x20`.  (Since calldata is byte-based
-rather than word-based, this offset is not disastrous like it would be in, say,
-storage.)
+on multiples of `0x20` but rather to begin offset by 4-bytes; "slots" in
+calldata will begin at bytes whose address is congruent to `0x4` modulo `0x20`.
+(This is simpler than in memory, where the offset can vary.) Because we will
+only access calldata through pointers, this offset is not that relevant, but it
+is worth noting.
 
-Because we will only access calldata through pointers, this offset is not that
-relevant, but it is worth noting.
-
-Also note that in constructors, there is no 4-byte offset, but that's because in
-constructors, calldata is empty (the special variable `msg.sig` is padded to
-contain 4 zero bytes).  Parameters passed to constructors actually go in *code*
-rather than calldata -- and are represented the same way but with a different
-offset -- but since we will only deal with them once they have been copied onto
-the stack or into memory, we will ignore this.
+Also note that in constructors, there is no 4-byte signature, and in fact
+calldata is empty (the special variable `msg.sig` is padded to contain 4 zero
+bytes).  Parameters passed to constructors actually go in *code* rather than
+calldata, and so have a different offset; but since we will only deal with them
+once they have been copied onto the stack or into memory, we will ignore this.
 
 <a name="user-content-locations-in-detail-calldata-in-detail-calldata-direct-types-and-pointer-types"></a>
 #### Calldata: Direct types and pointer types
@@ -728,17 +724,16 @@ Or, to put it differently, either way it is always relative to the start of the
 list of elements it is contained in.
 
 Note that pointers to calldata from calldata will always be multiples of `0x20`,
-since calldata, like memory, is padded (and these pointers are relative rather
-than absolute).
+since calldata is padded, and unlike in memory this padding is always used.
 
 <a name="user-content-locations-in-detail-calldata-in-detail-pointers-to-calldata-from-the-stack"></a>
 #### Pointers to calldata from the stack
 
 Pointers to a `type[n] calldata` (the only legal multivalue type in calldata,
-presently) from the stack work like [pointers to memory](#user-content-locations-in-detail-pointers-to-memory):
-They are absolute, given in bytes, and always point to the start of a word.  In
-calldata, though, the [start of a word](#user-content-locations-in-detail-calldata-in-detail-slots-in-calldata-and-the-offset)
-is congruent to `0x4` modulo `0x20`, rather than being a multiple of `0x20`.
+presently) from the stack work like [pointers to memory](#user-content-locations-in-detail-pointers-to-memory:
+They are absolute and given in bytes.  (As such, they will always be congruent
+to `0x4` modulo `0x20`, as [mentioned
+above](#user-content-locations-in-detail-calldata-in-detail-slots-in-calldata-and-the-offset).)
 
 Pointers to calldata lookup types from the stack take up two words on the stack
 rather than just one.  The bottom word is a pointer -- absolute and given in
