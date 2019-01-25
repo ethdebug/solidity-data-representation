@@ -4,7 +4,7 @@ For writers of line debuggers and other debugging-related utilities.
 
 ---
 
-![Solidity storage allocation example layout](storage.svg)
+![Solidity storage allocation example layout](storage.png)
 
 | Author | Harry Altman [@haltman-at] |
 | -----------:|:------------ |
