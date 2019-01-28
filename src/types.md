@@ -83,12 +83,16 @@ mentioned above):
 
 #### Table of types and locations
 
-| Location | Direct types                                       | Multivalue types       | Lookup types            | Mappings in structs are... | Pointer types                                 |
-|----------|----------------------------------------------------|------------------------|-------------------------|----------------------------|-----------------------------------------------|
-| Stack    | Yes                                                | No (only as pointers)  | No (only as pointers)   | N/A                        | To storage, memory, or calldata               |
-| Storage  | Yes                                                | Yes                    | Yes                     | Legal                      | No                                            |
-| Memory   | Only as elements of other types                    | Yes                    | Yes, excluding mappings | Omitted                    | To memory (only as elements of other types)   |
-| Calldata | Only as elements of other types, with restrictions | Yes, excluding structs | Yes, excluding mappings | Illegal                    | To calldata (only as elements of other types) |
+| Location | Direct types                                       | Multivalue types      | Lookup types            | Mappings in structs are... | Pointer types                                 |
+|----------|----------------------------------------------------|-----------------------|-------------------------|----------------------------|-----------------------------------------------|
+| Stack    | Yes                                                | No (only as pointers) | No (only as pointers)   | N/A                        | To storage, memory, or calldata               |
+| Storage  | Yes                                                | Yes                   | Yes                     | Legal                      | No                                            |
+| Memory   | Only as elements of other types                    | Yes                   | Yes, excluding mappings | Omitted                    | To memory (only as elements of other types)   |
+| Calldata | Only as elements of other types, with restrictions | Yes                   | Yes, excluding mappings | Illegal                    | To calldata (only as elements of other types) |
+
+*Remark*: Structs in calldata, as well as arrays in calldata with base type not
+a direct type, are not actually yet supported.  What we've written here about
+them is inferred based on how we can expect them to work.
 
 ### Overview of the types: Direct types
 {"gitdown": "scroll-up", "upRef": "#user-content-types-overview", "upTitle": "Back to Types Overview"}
@@ -308,12 +312,15 @@ it's illegal to delete them.
 
 #### Table of pointer types
 
-| Type                                           | Absolute or relative?        | Measured in... | Has second word for length? | Default value                                                  |
-|------------------------------------------------|------------------------------|----------------|-----------------------------|----------------------------------------------------------------|
-| Pointer to storage                             | Absolute                     | Words          | No                          | `0` (may be garbage, don't use!)                               |
-| Pointer to memory                              | Absolute                     | Bytes          | No                          | `0x60` for lookup types; no fixed default for multivalue types |
-| Pointer to calldata from calldata              | Relative (in an unusual way) | Bytes          | No                          | N/A                                                            |
-| Pointer to calldata `type[n]` from the stack   | Absolute                     | Bytes          | No                          | N/A                                                            |
-| Pointer to calldata lookup type from the stack | Absolute (with an offset)    | Bytes          | Yes                         | N/A                                                            |
-                                             |
+| Type                                                 | Absolute or relative?        | Measured in... | Has second word for length? | Default value                                                  |
+|------------------------------------------------------|------------------------------|----------------|-----------------------------|----------------------------------------------------------------|
+| Pointer to storage                                   | Absolute                     | Words          | No                          | `0` (may be garbage, don't use!)                               |
+| Pointer to memory                                    | Absolute                     | Bytes          | No                          | `0x60` for lookup types; no fixed default for multivalue types |
+| Pointer to calldata from calldata                    | Relative (in an unusual way) | Bytes          | No                          | N/A                                                            |
+| Pointer to calldata multivalue type from the stack   | Absolute                     | Bytes          | No                          | N/A                                                            |
+| Pointer to calldata lookup type from the stack       | Absolute (with an offset)    | Bytes          | Yes                         | N/A                                                            |
+
+*Remark*: Pointers to structs in calldata from the stack are not actually
+supported yet; their listed properties are inferred based on how we can expect
+them to work.
 
