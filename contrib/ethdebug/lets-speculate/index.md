@@ -608,7 +608,7 @@ Since the last slot may not contain a full 32 bytes, it is zero-padded on the
 right.
 
 *Remark*: In Solidity version 0.5.3 specifically, there is a bug that can cause
-some `bytes` to lack the padding on the end, resulting in the alignment bug
+particular `bytes` to lack the padding on the end, resulting in the alignment bug
 [mentioned above](#user-content-locations-in-detail-memory-in-detail).
 
 
@@ -762,6 +762,9 @@ to memory](#user-content-locations-in-detail-pointers-to-memory): They are
 absolute, given in bytes, and always point to the start of a word.  In
 calldata, though, the [start of a word](#user-content-locations-in-detail-calldata-in-detail-slots-in-calldata-and-the-offset)
 is congruent to `0x4` modulo `0x20`, rather than being a multiple of `0x20`.
+(Note that pointers to structs in calldata from the stack are not actually
+supported yet; their description here is inferred based on how we can expect
+them to work.)
 
 Pointers to calldata lookup types from the stack take up two words on the stack
 rather than just one.  The bottom word is a pointer -- absolute and given in
@@ -772,10 +775,6 @@ calldata](#user-content-locations-in-detail-calldata-in-detail-calldata-multival
 similar).  The top word contains the length.  Note, obviously, that if the length is
 zero then the value of the pointer is irrelevant (and the word it points to may
 contain unrelated data).
-
-*Remark*: Pointers to structs in calldata from the stack are not actually
-supported yet; their listed properties are inferred based on how we can expect
-them to work.
 
 
 <a name="user-content-locations-in-detail-storage-in-detail"></a>
