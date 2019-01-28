@@ -198,8 +198,7 @@ digression and discuss pointers to calldata.
 
 Pointers to calldata are different depending on whether they are from calldata
 or from the stack; and pointers to calldata from the stack are different
-depending on whether they point to a multivalue type (i.e. a `type[n]`) or to a
-lookup type.
+depending on whether they point to a multivalue type or to a lookup type.
 
 Note, by the way, that there is no need for any sort of
 [null pointer](#user-content-locations-in-detail-pointers-to-memory) in calldata, and so no equivalent exists.
@@ -230,9 +229,9 @@ than absolute).
 
 #### Pointers to calldata from the stack
 
-Pointers to a `type[n] calldata` (the only legal multivalue type in calldata,
-presently) from the stack work like [pointers to memory](#user-content-locations-in-detail-pointers-to-memory):
-They are absolute, given in bytes, and always point to the start of a word.  In
+Pointers to a calldata multivalue types from the stack work just like [pointers
+to memory](#user-content-locations-in-detail-pointers-to-memory): They are
+absolute, given in bytes, and always point to the start of a word.  In
 calldata, though, the [start of a word](#user-content-locations-in-detail-calldata-in-detail-slots-in-calldata-and-the-offset)
 is congruent to `0x4` modulo `0x20`, rather than being a multiple of `0x20`.
 
@@ -245,6 +244,11 @@ calldata](#user-content-locations-in-detail-calldata-in-detail-calldata-multival
 similar).  The top word contains the length.  Note, obviously, that if the length is
 zero then the value of the pointer is irrelevant (and the word it points to may
 contain unrelated data).
+
+*Remark*: Pointers to structs in calldata from the stack are not actually
+supported yet; their listed properties are inferred based on how we can expect
+them to work.
+
 
 ### Storage in detail
 {"gitdown": "scroll-up", "upRef": "#user-content-locations-in-detail", "upTitle": "Back to Locations in Detail"}
