@@ -95,9 +95,9 @@ mentioned above):
 | Memory   | Only as elements of other types                    | Yes                                  | Yes, excluding mappings | Omitted                    | To memory (only as elements of other types)   |
 | Calldata | Only as elements of other types, with restrictions | Yes, excluding circular struct types | Yes, excluding mappings | Illegal                    | To calldata (only as elements of other types) |
 
-Note that with the exception of the special case of mappings in structs, one
-should in general infer that if any element of a type is illegal in that
-location, then so is the type as a whole.
+Note that with the exception of the special case of mappings in structs, it is
+otherwise true that if the type of some element of some given type is illegal
+in that location, then so is the type as a whole.
 
 *Remark*: Structs in calldata, as well as arrays in calldata with base type not
 a direct type, are not actually yet supported.  What we've written here about
