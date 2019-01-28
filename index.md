@@ -9,7 +9,7 @@ For writers of line debuggers and other debugging-related utilities.
 | Author | Harry Altman [@haltman-at] |
 | -----------:|:------------ |
 | Published | 2018-12-26 - Boxing Day |
-| Last revised | 2019-1-25 |
+| Last revised | 2019-1-28 |
 | Copyright | 2018-2019 Truffle |
 | License | <a rel="license" href="http://creativecommons.org/licenses/by/4.0/"><img alt="Creative Commons License" style="border-width:0" src="https://i.creativecommons.org/l/by/4.0/88x31.png" /></a> |
 | Document Source | [ethdebug/solidity-data-representation](https://github.com/ethdebug/solidity-data-representation) |
@@ -234,12 +234,16 @@ mentioned above):
 <a name="user-content-types-overview-types-and-locations-table-of-types-and-locations"></a>
 #### Table of types and locations
 
-| Location | Direct types                                       | Multivalue types       | Lookup types            | Mappings in structs are... | Pointer types                                 |
-|----------|----------------------------------------------------|------------------------|-------------------------|----------------------------|-----------------------------------------------|
-| Stack    | Yes                                                | No (only as pointers)  | No (only as pointers)   | N/A                        | To storage, memory, or calldata               |
-| Storage  | Yes                                                | Yes                    | Yes                     | Legal                      | No                                            |
-| Memory   | Only as elements of other types                    | Yes                    | Yes, excluding mappings | Omitted                    | To memory (only as elements of other types)   |
-| Calldata | Only as elements of other types, with restrictions | Yes, excluding structs | Yes, excluding mappings | Illegal                    | To calldata (only as elements of other types) |
+| Location | Direct types                                       | Multivalue types      | Lookup types            | Mappings in structs are... | Pointer types                                 |
+|----------|----------------------------------------------------|-----------------------|-------------------------|----------------------------|-----------------------------------------------|
+| Stack    | Yes                                                | No (only as pointers) | No (only as pointers)   | N/A                        | To storage, memory, or calldata               |
+| Storage  | Yes                                                | Yes                   | Yes                     | Legal                      | No                                            |
+| Memory   | Only as elements of other types                    | Yes                   | Yes, excluding mappings | Omitted                    | To memory (only as elements of other types)   |
+| Calldata | Only as elements of other types, with restrictions | Yes                   | Yes, excluding mappings | Illegal                    | To calldata (only as elements of other types) |
+
+*Remark*: Structs in calldata, as well as arrays in calldata with base type not
+a direct type, are not actually yet supported.  What we've written here about
+them is inferred based on how we can expect them to work.
 
 <a name="user-content-types-overview-overview-of-the-types-direct-types"></a>
 ### Overview of the types: Direct types
@@ -469,14 +473,17 @@ it's illegal to delete them.
 <a name="user-content-types-overview-overview-of-the-types-pointer-types-table-of-pointer-types"></a>
 #### Table of pointer types
 
-| Type                                           | Absolute or relative?        | Measured in... | Has second word for length? | Default value                                                  |
-|------------------------------------------------|------------------------------|----------------|-----------------------------|----------------------------------------------------------------|
-| Pointer to storage                             | Absolute                     | Words          | No                          | `0` (may be garbage, don't use!)                               |
-| Pointer to memory                              | Absolute                     | Bytes          | No                          | `0x60` for lookup types; no fixed default for multivalue types |
-| Pointer to calldata from calldata              | Relative (in an unusual way) | Bytes          | No                          | N/A                                                            |
-| Pointer to calldata `type[n]` from the stack   | Absolute                     | Bytes          | No                          | N/A                                                            |
-| Pointer to calldata lookup type from the stack | Absolute (with an offset)    | Bytes          | Yes                         | N/A                                                            |
-                                             |
+| Type                                                 | Absolute or relative?        | Measured in... | Has second word for length? | Default value                                                  |
+|------------------------------------------------------|------------------------------|----------------|-----------------------------|----------------------------------------------------------------|
+| Pointer to storage                                   | Absolute                     | Words          | No                          | `0` (may be garbage, don't use!)                               |
+| Pointer to memory                                    | Absolute                     | Bytes          | No                          | `0x60` for lookup types; no fixed default for multivalue types |
+| Pointer to calldata from calldata                    | Relative (in an unusual way) | Bytes          | No                          | N/A                                                            |
+| Pointer to calldata multivalue type from the stack   | Absolute                     | Bytes          | No                          | N/A                                                            |
+| Pointer to calldata lookup type from the stack       | Absolute (with an offset)    | Bytes          | Yes                         | N/A                                                            |
+
+*Remark*: Pointers to structs in calldata from the stack are not actually
+supported yet; their listed properties are inferred based on how we can expect
+them to work.
 
 
 
@@ -601,7 +608,7 @@ Since the last slot may not contain a full 32 bytes, it is zero-padded on the
 right.
 
 *Remark*: In Solidity version 0.5.3 specifically, there is a bug that can cause
-some `bytes` to lack the padding on the end, resulting in the alignment bug
+particular `bytes` to lack the padding on the end, resulting in the alignment bug
 [mentioned above](#user-content-locations-in-detail-memory-in-detail).
 
 
@@ -717,8 +724,7 @@ digression and discuss pointers to calldata.
 
 Pointers to calldata are different depending on whether they are from calldata
 or from the stack; and pointers to calldata from the stack are different
-depending on whether they point to a multivalue type (i.e. a `type[n]`) or to a
-lookup type.
+depending on whether they point to a multivalue type or to a lookup type.
 
 Note, by the way, that there is no need for any sort of
 [null pointer](#user-content-locations-in-detail-pointers-to-memory) in calldata, and so no equivalent exists.
@@ -751,11 +757,14 @@ than absolute).
 <a name="user-content-locations-in-detail-calldata-in-detail-pointers-to-calldata-from-the-stack"></a>
 #### Pointers to calldata from the stack
 
-Pointers to a `type[n] calldata` (the only legal multivalue type in calldata,
-presently) from the stack work like [pointers to memory](#user-content-locations-in-detail-pointers-to-memory):
-They are absolute, given in bytes, and always point to the start of a word.  In
+Pointers to a calldata multivalue types from the stack work just like [pointers
+to memory](#user-content-locations-in-detail-pointers-to-memory): They are
+absolute, given in bytes, and always point to the start of a word.  In
 calldata, though, the [start of a word](#user-content-locations-in-detail-calldata-in-detail-slots-in-calldata-and-the-offset)
 is congruent to `0x4` modulo `0x20`, rather than being a multiple of `0x20`.
+(Note that pointers to structs in calldata from the stack are not actually
+supported yet; their description here is inferred based on how we can expect
+them to work.)
 
 Pointers to calldata lookup types from the stack take up two words on the stack
 rather than just one.  The bottom word is a pointer -- absolute and given in
@@ -766,6 +775,7 @@ calldata](#user-content-locations-in-detail-calldata-in-detail-calldata-multival
 similar).  The top word contains the length.  Note, obviously, that if the length is
 zero then the value of the pointer is irrelevant (and the word it points to may
 contain unrelated data).
+
 
 <a name="user-content-locations-in-detail-storage-in-detail"></a>
 ### Storage in detail
