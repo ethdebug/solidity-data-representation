@@ -60,7 +60,8 @@ of course also be of direct or pointer type.
 Some types are not allowed in calldata, especially if `ABIEncoderV2` is not
 being used; but we will assume it is, and even describe some things that are not
 supported by Solidity at all yet, since we want to be able to decode whatever
-people might choose to encode.
+people might choose to encode.  In particular, though, circular types are never
+allowed in calldata.
 
 In addition, the locations memory and calldata may not hold mappings, which may
 go only in storage.  (However, structs that *contain* mappings can go in memory,
@@ -69,6 +70,10 @@ memory](#user-content-locations-in-detail-memory-in-detail-memory-lookup-types) 
 
 Storage does not hold pointer types as there is never any reason for it to do
 so.
+
+While this is not a type-level concern, it is likely worth noting here that
+memory (and no other location) can contain circular structs.  Storage can also
+contain structs of circular type, but not actual circular structs.
 
 Note that reference types, in Solidity, include the location as part of the type
 (with the exception of mappings as it would be unnecessary there); however we
@@ -83,12 +88,16 @@ mentioned above):
 
 #### Table of types and locations
 
-| Location | Direct types                                       | Multivalue types      | Lookup types            | Mappings in structs are... | Pointer types                                 |
-|----------|----------------------------------------------------|-----------------------|-------------------------|----------------------------|-----------------------------------------------|
-| Stack    | Yes                                                | No (only as pointers) | No (only as pointers)   | N/A                        | To storage, memory, or calldata               |
-| Storage  | Yes                                                | Yes                   | Yes                     | Legal                      | No                                            |
-| Memory   | Only as elements of other types                    | Yes                   | Yes, excluding mappings | Omitted                    | To memory (only as elements of other types)   |
-| Calldata | Only as elements of other types, with restrictions | Yes                   | Yes, excluding mappings | Illegal                    | To calldata (only as elements of other types) |
+| Location | Direct types                                       | Multivalue types                     | Lookup types            | Mappings in structs are... | Pointer types                                 |
+|----------|----------------------------------------------------|--------------------------------------|-------------------------|----------------------------|-----------------------------------------------|
+| Stack    | Yes                                                | No (only as pointers)                | No (only as pointers)   | N/A                        | To storage, memory, or calldata               |
+| Storage  | Yes                                                | Yes                                  | Yes                     | Legal                      | No                                            |
+| Memory   | Only as elements of other types                    | Yes                                  | Yes, excluding mappings | Omitted                    | To memory (only as elements of other types)   |
+| Calldata | Only as elements of other types, with restrictions | Yes, excluding circular struct types | Yes, excluding mappings | Illegal                    | To calldata (only as elements of other types) |
+
+Note that with the exception of the special case of mappings in structs, it is
+otherwise true that if the type of some element of some given type is illegal
+in that location, then so is the type as a whole.
 
 *Remark*: Structs in calldata, as well as arrays in calldata with base type not
 a direct type, are not actually yet supported.  What we've written here about
@@ -224,6 +233,13 @@ though, as per the following section, mappings cannot appear in memory), but
 rather, the mapping is simply omitted in memory.  See the [memory
 section](#user-content-locations-in-detail-memory-in-detail-memory-lookup-types) for more details.  Such a struct is barred from
 appearing in calldata, however.
+
+Also note that circular struct types are allowed, so long as the circularity is
+mediated by a lookup type.  That is to say, if a struct type `T0` has a element
+type `T1` which has a element type ... which has a element type `Tn` with `Tn`
+equal to T0, this is legal only if at least one of the types `Ti` is a lookup
+type.  However, such types are allowed only in storage and memory, not
+calldata.
 
 The default value for a multivalue type consists of assigning the default value
 to each of its element variables.

@@ -71,6 +71,10 @@ single word of all zeroes).  Of course, since we only access memory through
 pointers, if we are given a pointer to such a struct, we need not decode
 anything, as all of the struct's elements have been omitted.
 
+Note that it is possible to have circular structs -- not just circular struct
+types, but actual circular structs -- in memory.  This is not possible in any
+other location.
+
 #### Memory: Lookup types
 
 There are two lookup types that can go in memory: `type[]` and `bytes` (there is
