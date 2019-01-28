@@ -18,7 +18,9 @@ trouble than it causes.)
 
 (For calldata, we will actually use a slightly different convention, as
 [detailed later](#user-content-locations-in-detail-calldata-in-detail-slots-in-calldata-and-the-offset),
-but you can ignore that for now.)
+but you can ignore that for now.  We will also occasionally use a different
+convention in memory, as [also detailed later](#user-content-locations-in-detail-locations-in-detail), but you can again ignore that
+for now.)
 
 Memory and calldata will always be accessed through pointers to such; as such,
 we will only discuss concrete data layout for storage and (a little bit) for the
