@@ -9,7 +9,7 @@ For writers of line debuggers and other debugging-related utilities.
 | Author | Harry Altman [@haltman-at] |
 | -----------:|:------------ |
 | Published | 2018-12-26 - Boxing Day |
-| Last revised | 2019-1-28 |
+| Last revised | 2019-1-30 |
 | Copyright | 2018-2019 Truffle |
 | License | <a rel="license" href="http://creativecommons.org/licenses/by/4.0/"><img alt="Creative Commons License" style="border-width:0" src="https://i.creativecommons.org/l/by/4.0/88x31.png" /></a> |
 | Document Source | [ethdebug/solidity-data-representation](https://github.com/ethdebug/solidity-data-representation) |
@@ -918,15 +918,16 @@ what keys exist; keys that don't exist and keys whose corresponding element is
 
 For a mapping `map` and a key `key`, then, the element `map[key]` is stored
 starting at `keccak256(key . p)`, where `.` represents concatenation and `key`
-here has been converted to a string of bytes -- something that is meaningful for
-every [elementary type](#user-content-types-overview-overview-of-the-types-lookup-types) (the legal key
-types).  For the elementary types which are direct, the value can be converted
-to a string of bytes by the representations listed in the [section on direct
-types](#user-content-types-overview-overview-of-the-types-direct-types-representations-of-direct-types), with the lengths as listed in the
-[direct types table](#user-content-types-overview-overview-of-the-types-direct-types-table-of-direct-types); for the lookup elementary type
-`bytes` ([and `string`](#user-content-types-overview-overview-of-the-types-lookup-types)), well, this by
-itself represents a string of bytes!  Similarly, the position `p` is regarded as
-a 32-byte unsigned integer, because that is how storage locations are accessed.
+here has been converted to a string of bytes -- something that is meaningful
+for every [elementary type](#user-content-types-overview-overview-of-the-types-lookup-types) (the
+legal key types).  For the elementary types which are direct, the padded form
+is used; the value can be converted to a string of bytes by the representations
+listed in the [section on direct types](#user-content-types-overview-overview-of-the-types-direct-types-representations-of-direct-types),
+with the padding as listed in the [direct types table](#user-content-types-overview-overview-of-the-types-direct-types-table-of-direct-types);
+for the lookup elementary type `bytes` ([and `string`](#user-content-types-overview-overview-of-the-types-lookup-types)),
+well, this by itself represents a string of bytes!  (No padding is applied to
+these.)  Similarly, the position `p` is regarded as a 32-byte unsigned integer,
+because that is how storage locations are accessed.
 
 Note that if an element of a mapping is of direct type, this means it will
 always start on a slot boundary, even if it doesn't normally have to.  In any
