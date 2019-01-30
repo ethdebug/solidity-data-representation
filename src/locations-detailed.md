@@ -376,9 +376,9 @@ is used; the value can be converted to a string of bytes by the representations
 listed in the [section on direct types](#user-content-types-overview-overview-of-the-types-direct-types-representations-of-direct-types),
 with the padding as listed in the [direct types table](#user-content-types-overview-overview-of-the-types-direct-types-table-of-direct-types);
 for the lookup elementary type `bytes` ([and `string`](#user-content-types-overview-overview-of-the-types-lookup-types)),
-well, this by itself represents a string of bytes!  Similarly, the position `p`
-is regarded as a 32-byte unsigned integer, because that is how storage
-locations are accessed.
+well, this by itself represents a string of bytes!  (No padding is applied to
+these.)  Similarly, the position `p` is regarded as a 32-byte unsigned integer,
+because that is how storage locations are accessed.
 
 Note that if an element of a mapping is of direct type, this means it will
 always start on a slot boundary, even if it doesn't normally have to.  In any
