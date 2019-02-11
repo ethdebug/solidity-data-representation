@@ -211,12 +211,14 @@ cannot be stored in a variable.  These are:
 
 1.  External functions with a specified amount of `gas` or `value` attached
     (even if that amount is zero).
-2.  Special functions defined by the language.  This means globally available
+2.  Functions created by `using ... for ...` directives.
+3.  Special functions defined by the language.  This means globally available
     functions; functions which are members of arrays; functions which are
     members of addresses; and functions which are members of external functions.
 
 So, the question of how these are presently represented when stored, is that
-they are not.
+they are not.  (There are other presently unstoreable functions, too, but since
+their unstorability is due to other issues, we will not discuss them here.)
 
 ### Overview of the types: Multivalue types
 {"gitdown": "scroll-up", "upRef": "#user-content-types-overview", "upTitle": "Back to Types Overview"}
