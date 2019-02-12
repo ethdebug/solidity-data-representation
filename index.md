@@ -9,7 +9,7 @@ For writers of line debuggers and other debugging-related utilities.
 | Author | Harry Altman [@haltman-at] |
 | -----------:|:------------ |
 | Published | 2018-12-26 - Boxing Day |
-| Last revised | 2019-2-11 |
+| Last revised | 2019-2-12 |
 | Copyright | 2018-2019 Truffle |
 | License | <a rel="license" href="http://creativecommons.org/licenses/by/4.0/"><img alt="Creative Commons License" style="border-width:0" src="https://i.creativecommons.org/l/by/4.0/88x31.png" /></a> |
 | Document Source | [ethdebug/solidity-data-representation](https://github.com/ethdebug/solidity-data-representation) |
@@ -47,7 +47,7 @@ original value in calldata will always be copied onto the stack before use).
 Obviously the value still exists in calldata, but since no variable points
 there, it's not our concern.
 
-_**Note**: This document pertains to **Solidity v0.5.3**, current as of this
+_**Note**: This document pertains to **Solidity v0.5.4**, current as of this
 writing._
 
 
@@ -250,9 +250,9 @@ Note that with the exception of the special case of mappings in structs, it is
 otherwise true that if the type of some element of some given type is illegal
 in that location, then so is the type as a whole.
 
-*Remark*: Structs in calldata, as well as arrays in calldata with base type not
-a direct type, are not actually yet supported.  What we've written here about
-them is inferred based on how we can expect them to work.
+*Remark*: Reference types in calldata which have dynamic types as elements are
+not actually yet supported.  What we've written here about them is inferred
+based on how we can expect them to work.
 
 <a name="user-content-types-overview-overview-of-the-types-direct-types"></a>
 ### Overview of the types: Direct types
@@ -501,11 +501,6 @@ it's illegal to delete them.
 | Pointer to calldata from calldata                    | Relative (in an unusual way) | Bytes          | No                          | N/A                                                            |
 | Pointer to calldata multivalue type from the stack   | Absolute                     | Bytes          | No                          | N/A                                                            |
 | Pointer to calldata lookup type from the stack       | Absolute (with an offset)    | Bytes          | Yes                         | N/A                                                            |
-
-*Remark*: Pointers to structs in calldata from the stack are not actually
-supported yet; their listed properties are inferred based on how we can expect
-them to work.
-
 
 
 <a name="user-content-locations-in-detail"></a>
