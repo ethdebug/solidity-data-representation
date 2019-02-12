@@ -99,9 +99,9 @@ Note that with the exception of the special case of mappings in structs, it is
 otherwise true that if the type of some element of some given type is illegal
 in that location, then so is the type as a whole.
 
-*Remark*: Structs in calldata, as well as arrays in calldata with base type not
-a direct type, are not actually yet supported.  What we've written here about
-them is inferred based on how we can expect them to work.
+*Remark*: Reference types in calldata which have dynamic types as elements are
+not actually yet supported.  What we've written here about them is inferred
+based on how we can expect them to work.
 
 ### Overview of the types: Direct types
 {"gitdown": "scroll-up", "upRef": "#user-content-types-overview", "upTitle": "Back to Types Overview"}
@@ -340,8 +340,3 @@ it's illegal to delete them.
 | Pointer to calldata from calldata                    | Relative (in an unusual way) | Bytes          | No                          | N/A                                                            |
 | Pointer to calldata multivalue type from the stack   | Absolute                     | Bytes          | No                          | N/A                                                            |
 | Pointer to calldata lookup type from the stack       | Absolute (with an offset)    | Bytes          | Yes                         | N/A                                                            |
-
-*Remark*: Pointers to structs in calldata from the stack are not actually
-supported yet; their listed properties are inferred based on how we can expect
-them to work.
-
