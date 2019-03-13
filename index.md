@@ -9,7 +9,7 @@ For writers of line debuggers and other debugging-related utilities.
 | Author | Harry Altman [@haltman-at] |
 | -----------:|:------------ |
 | Published | 2018-12-26 - Boxing Day |
-| Last revised | 2019-2-12 |
+| Last revised | 2019-3-12 |
 | Copyright | 2018-2019 Truffle |
 | License | <a rel="license" href="http://creativecommons.org/licenses/by/4.0/"><img alt="Creative Commons License" style="border-width:0" src="https://i.creativecommons.org/l/by/4.0/88x31.png" /></a> |
 | Document Source | [ethdebug/solidity-data-representation](https://github.com/ethdebug/solidity-data-representation) |
@@ -47,7 +47,7 @@ original value in calldata will always be copied onto the stack before use).
 Obviously the value still exists in calldata, but since no variable points
 there, it's not our concern.
 
-_**Note**: This document pertains to **Solidity v0.5.4**, current as of this
+_**Note**: This document pertains to **Solidity v0.5.5**, current as of this
 writing._
 
 
@@ -572,7 +572,7 @@ pointers.  We'll break this down into sections depending on what type of
 variable we're looking at.
 
 *Remark*: Although memory objects ordinarily start on a word, there is a bug in
-version 0.5.3 of Solidity specifically that can occasionally cause them to
+versions 0.5.3 and 0.5.5 of Solidity specifically that can occasionally cause them to
 start in the middle of a word.  In this case, for the purposes of decoding that
 object, you should consider slots to begin at the beginning of that object. (Of
 course, once you follow a pointer, you'll have to have your slots based on that
@@ -627,8 +627,8 @@ string are *not* individually padded, but rather are simply stored in sequence.
 Since the last slot may not contain a full 32 bytes, it is zero-padded on the
 right.
 
-*Remark*: In Solidity version 0.5.3 specifically, there is a bug that can cause
-particular `bytes` to lack the padding on the end, resulting in the alignment bug
+*Remark*: In Solidity versions 0.5.3 and 0.5.5 specifically, there is a bug that can cause
+particular `bytes` and `string`s to lack the padding on the end, resulting in the alignment bug
 [mentioned above](#user-content-locations-in-detail-memory-in-detail).
 
 
@@ -637,7 +637,8 @@ particular `bytes` to lack the padding on the end, resulting in the alignment bu
 
 Pointers to memory are absolute and given in bytes.  Since memory is padded, all
 pointers will point to the start of a word and thus be a multiple of `0x20`.
-(With the exception, [mentioned above](#user-content-locations-in-detail-memory-in-detail), of some pointers in Solidity v0.5.3.)
+(With the exception, [mentioned above](#user-content-locations-in-detail-memory-in-detail),
+of some pointers in Solidity v0.5.3 and v0.5.5.)
 
 The pointer `0x60` is something of a null pointer; it points to a reserved slot
 which is always zero.  By the previous section, this slot can therefore
