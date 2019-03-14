@@ -58,9 +58,7 @@ reference type, although their elements, also living in memory or calldata, can
 of course also be of direct or pointer type.
 
 Some types are not allowed in calldata, especially if `ABIEncoderV2` is not
-being used; but we will assume it is, and even describe some things that are not
-supported by Solidity at all yet, since we want to be able to decode whatever
-people might choose to encode.  In particular, though, circular types are never
+being used; but we will assume it is.  Note, though, that circular types are never
 allowed in calldata.
 
 In addition, the locations memory and calldata may not hold mappings, which may
@@ -98,10 +96,6 @@ mentioned above):
 Note that with the exception of the special case of mappings in structs, it is
 otherwise true that if the type of some element of some given type is illegal
 in that location, then so is the type as a whole.
-
-*Remark*: Reference types in calldata which have dynamic types as elements are
-not actually yet supported.  What we've written here about them is inferred
-based on how we can expect them to work.
 
 ### Overview of the types: Direct types
 {"gitdown": "scroll-up", "upRef": "#user-content-types-overview", "upTitle": "Back to Types Overview"}

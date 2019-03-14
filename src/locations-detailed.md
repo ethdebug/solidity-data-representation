@@ -40,7 +40,7 @@ pointers.  We'll break this down into sections depending on what type of
 variable we're looking at.
 
 *Remark*: Although memory objects ordinarily start on a word, there is a bug in
-versions 0.5.3 and 0.5.5 of Solidity specifically that can occasionally cause them to
+versions 0.5.3, 0.5.5, and 0.5.6 of Solidity specifically that can occasionally cause them to
 start in the middle of a word.  In this case, for the purposes of decoding that
 object, you should consider slots to begin at the beginning of that object. (Of
 course, once you follow a pointer, you'll have to have your slots based on that
@@ -92,7 +92,7 @@ string are *not* individually padded, but rather are simply stored in sequence.
 Since the last slot may not contain a full 32 bytes, it is zero-padded on the
 right.
 
-*Remark*: In Solidity versions 0.5.3 and 0.5.5 specifically, there is a bug that can cause
+*Remark*: In a few specific versions of Solidity, there is a bug that can cause
 particular `bytes` and `string`s to lack the padding on the end, resulting in the alignment bug
 [mentioned above](#user-content-locations-in-detail-memory-in-detail).
 
@@ -102,7 +102,7 @@ particular `bytes` and `string`s to lack the padding on the end, resulting in th
 Pointers to memory are absolute and given in bytes.  Since memory is padded, all
 pointers will point to the start of a word and thus be a multiple of `0x20`.
 (With the exception, [mentioned above](#user-content-locations-in-detail-memory-in-detail),
-of some pointers in Solidity v0.5.3 and v0.5.5.)
+of some pointers in some specific versions of Solidity.)
 
 The pointer `0x60` is something of a null pointer; it points to a reserved slot
 which is always zero.  By the previous section, this slot can therefore
@@ -239,9 +239,6 @@ to memory](#user-content-locations-in-detail-pointers-to-memory): They are
 absolute, given in bytes, and always point to the start of a word.  In
 calldata, though, the [start of a word](#user-content-locations-in-detail-calldata-in-detail-slots-in-calldata-and-the-offset)
 is congruent to `0x4` modulo `0x20`, rather than being a multiple of `0x20`.
-(Note that pointers to structs in calldata from the stack are not actually
-supported yet; their description here is inferred based on how we can expect
-them to work.)
 
 Pointers to calldata lookup types from the stack take up two words on the stack
 rather than just one.  The bottom word is a pointer -- absolute and given in
