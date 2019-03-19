@@ -1,9 +1,14 @@
-### The stack in (some) detail
+### The stack in detail
 {"gitdown": "scroll-up", "upRef": "#user-content-locations-in-detail", "upTitle": "Back to Locations in Detail"}
 
-The stack, as mentioned above, can hold only direct types and pointer types.
+The stack, as [mentioned above](#user-content-types-overview-types-and-locations), can hold only direct types and pointer types.
+It's also the one location other than storage that we will access directly
+rather than through storage, so we'll take some time to discuss data layout
+on the stack.
 
-The stack is also, as mentioned above, is a [padded
+#### The stack: Direct types and pointer types
+
+The stack is, as mentioned above, is a [padded
 location](#user-content-types-overview-overview-of-the-types-direct-types-basics-of-direct-types-packing-and-padding), so all direct types are
 padded to a full word in the manner described in the [direct types
 table](#user-content-types-overview-overview-of-the-types-direct-types-table-of-direct-types).
@@ -17,20 +22,72 @@ right [like in the other padded locations](#user-content-types-overview-overview
 
 The second two-word special case is that of pointers to calldata lookup types;
 see the section on [pointers to calldata from the
-stack](#user-content-locations-in-detail-calldata-in-detail-pointers-to-calldata-pointers-to-calldata-from-the-stack) for details.
+stack](#user-content-locations-in-detail-calldata-in-detail-pointers-to-calldata-from-the-stack) for details.
 
-The stack is a bit unpredictable in terms of data layout, as it's also used as
-working space.  However, the location of local variables can be figured out by
-other parts of the debugger, so we won't go into it here.  The location of
-function parameters can also be figured out by the debugger, but we need to
-discuss here the order in which such parameters go on the stack, so let us do
-that.
+#### The stack: Data layout
 
-Function parameters go on the bottom of a function's stackframe, directly above
-the return address (if there is one -- constructors don't have them).  They go
-in the order of first input parameters, in the order they were given, followed
-by output parameters, in the order they were given.  Anonymous output parameters
-are treated the same as named output parameters for these purposes.
+Stack variables are local variables, so naturally things will change as the
+contract executes.  But, we can still describe how things are at any given
+time.  Note that if you are actually writing a debugger, you may want to rely
+on other systems to determine data layout on the stack.
+
+The stack is of course not used only for storing local variables, but also as a
+working space.  And of course it also holds return addresses.  The stack is
+divided into stackframes; each stackframe begins with the return address.
+(There is no frame pointer, for those used to such a thing; just a return
+address.)  The exceptions are constructors and fallback functions, which do not
+include a return address.  In addition, if the initial function call (i.e.
+stackframe) of the EVM stackframe (i.e. message call or creation call) is not a
+constructor or fallback function, the function selector will be stored on the
+stack below the first stackframe.
+
+Note that function modifiers and base constructor invocations (whether placed
+on the constructor or on the contract) do not create new stackframes; these are
+part of the same stackframe as the function that invoked them.
+
+Within each stackframe, all variables are always stored below the workspace. So
+while the workspace may be unpredictable, we can ignore it for the purposes of
+data layout within a given stackframe.  (Of course, the workspace in one
+stackframe does come between that stackframe's variables and the start of the
+next stackframe.)
+
+Restricting our attention to the variables, then, the stack acts, as expected,
+as a stack; variables are pushed onto it when needed, and are popped off of it
+when no longer needed.  These pushes and pops are arranged in a way that is
+compatible with the stack structure; i.e., they are in fact pushes and pops.
+
+The parameters of the function being called, including output parameters, are
+pushed onto the stack when the function is called and the stackframe is
+entered, and are not popped until the function, *including all modifiers*,
+exits.  It's necessary here to specify the order they go onto the stack.  First
+come the input parameters, in the order they were given, followed by the output
+parameters, in the order they were given.  Anonymous output parameters are
+treated the same as named output parameters for these purposes.
+
+Ordinary local variables, as declared in a function or modifier, are pushed
+onto the stack at their declaration and are popped when their containing block
+exits (for variables declared in the initializer of a `for` loop, the
+containing block is considered to be the `for` loop).  If multiple variables
+are declared within a single statement, they go on the stack in the order they
+were declared within that statement.
+
+Parameters to a modifier are pushed onto the stack when that modifier begins
+and are popped when that modifier exits.  Again, they go in the stack in the
+order they were given.  Note that (like other local variables declared in
+modifiers) these variables are still on the stack while the placeholder
+statement `_;` is running, even if they are inaccessible.  Remember that
+modifiers are run in order from left to right.
+
+This leaves the case of parameters to base constructor invocations (whether on
+the constructor or on the contract).  When a constructor is called, after its
+parameters' lifetimes have begun (after they are put on the stack), all
+parameters to all of its (direct) base constructor calls are pushed onto the
+stack.  They go on in order from left to right; that is, the order of the
+parameters within each base constructor call is from left to right, and the
+order of the base constructor calls' parameter regions is from left to right as
+well.  When a base constructor call exits, its parameters are popped from the
+stack (remember that base constructor calls are run in order from right to
+left).
 
 ### Memory in detail
 {"gitdown": "scroll-up", "upRef": "#user-content-locations-in-detail", "upTitle": "Back to Locations in Detail"}
@@ -45,7 +102,7 @@ start in the middle of a word.  In this case, for the purposes of decoding that
 object, you should consider slots to begin at the beginning of that object. (Of
 course, once you follow a pointer, you'll have to have your slots based on that
 pointer.  Again, since we only access memory through pointers, this is mostly
-not a concern, and it only happens at all in that one version of Solidity.)
+not a concern, and it only happens at all in those specific versions of Solidity.)
 
 #### Memory: Direct types and pointer types
 
@@ -259,7 +316,15 @@ Storage, unlike the other locations mentioned thus far, is a
 The sizes in bytes of the direct types can be found in the [direct types
 table](#user-content-types-overview-overview-of-the-types-direct-types-table-of-direct-types).
 
-Variables in storage are always laid out in the order that they were declared,
+Storage is the one location other than the stack where we sometimes access
+variables directly rather than through pointers, so we will begin by describing
+data layout in storage.
+
+#### Storage: Data layout
+
+First, we consider the case of a contract that does not inherit from any others.
+
+In this case, Variables in storage are always laid out in the order that they were declared,
 starting from the beginning of storage.  However, within a word, variables are
 laid out from *right to left*, not left to right (with one sort-of-exception to
 be [described later](#user-content-locations-in-detail-storage-in-detail-storage-lookup-types)).  Variables of direct type may not
@@ -284,10 +349,7 @@ the compiler.
 Subject to the above restrictions, every variable is placed as early as
 possible.
 
-#### Storage: Inheritance
-
-Before we move on to the individual types, we must discuss the matter of
-inheritance.
+Now, we consider inheritance.
 
 In cases of inheritance, the variables of the base class go before those of the
 derived class.  Note that there is *not* any sort of barrier between the
@@ -307,7 +369,7 @@ this is the reverse order from, say, Python.)
 #### Storage: Direct types
 
 The layout of direct types has already been described
-[above](#user-content-locations-in-detail-storage-in-detail), and the sizes of the direct types are found in the
+[above](#user-content-locations-in-detail-storage-in-detail-storage-data-layout), and the sizes of the direct types are found in the
 [direct types table](#user-content-types-overview-overview-of-the-types-direct-types-table-of-direct-types).  Note that there are [no pointer
 types in storage](#user-content-types-overview-overview-of-the-types-pointer-types).
 
@@ -315,7 +377,7 @@ types in storage](#user-content-types-overview-overview-of-the-types-pointer-typ
 
 Variables of multivalue type simply have the elements stored consecutively
 within storage -- they are packed within the multivalue type [just as variables
-are packed within storage](#user-content-locations-in-detail-storage-in-detail).  The rules are exactly the same.
+are packed within storage](#user-content-locations-in-detail-storage-in-detail-storage-data-layout).  The rules are exactly the same.
 
 Again, remember that variables of multivalue type must occupy whole words; they
 start on a word boundary, and whatever comes after starts on a word boundary
@@ -330,7 +392,7 @@ There are three lookup types that can go in storage: `type[]`, `bytes` (and
 separately](#user-content-types-overview-overview-of-the-types-lookup-types)), and `mapping(keyType =>
 elementType)`.
 
-As [mentioned above](#user-content-locations-in-detail-storage-in-detail), we regard each lookup type as taking
+As [mentioned above](#user-content-locations-in-detail-storage-in-detail-storage-data-layout), we regard each lookup type as taking
 up one word; we will call this the "main word".
 
 For `type[]`, i.e. an array, the main word contains the length of the array.
@@ -355,7 +417,7 @@ take up as many words as necessary.  Again, any unused space left within the
 last word is left as zero.
 
 (Type `bytes` (and `string`) is the one sort-of-exception I mentioned to the
-[right-to-left rule within storage](#user-content-locations-in-detail-storage-in-detail).)
+[right-to-left rule within storage](#user-content-locations-in-detail-storage-in-detail-storage-data-layout).)
 
 Finally, we have mappings.  For mappings, the main word itself is unused and
 left as zero; only its position `p` is used.  Mappings, famously, do not store
