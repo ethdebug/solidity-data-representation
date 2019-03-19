@@ -73,7 +73,7 @@ writing._
 * [Locations in Detail](#user-content-locations-in-detail)
     * [The stack in detail](#user-content-locations-in-detail-the-stack-in-detail)
         * [The stack: Direct types and pointer types](#user-content-locations-in-detail-the-stack-in-detail-the-stack-direct-types-and-pointer-types)
-        * [The stack: data layout](#user-content-locations-in-detail-the-stack-in-detail-the-stack-data-layout)
+        * [The stack: Data layout](#user-content-locations-in-detail-the-stack-in-detail-the-stack-data-layout)
     * [Memory in detail](#user-content-locations-in-detail-memory-in-detail)
         * [Memory: Direct types and pointer types](#user-content-locations-in-detail-memory-in-detail-memory-direct-types-and-pointer-types)
         * [Memory: Multivalue types](#user-content-locations-in-detail-memory-in-detail-memory-multivalue-types)
@@ -504,7 +504,7 @@ it's illegal to delete them.
 
 * [The stack in detail](#user-content-locations-in-detail-the-stack-in-detail)
     * [The stack: Direct types and pointer types](#user-content-locations-in-detail-the-stack-in-detail-the-stack-direct-types-and-pointer-types)
-    * [The stack: data layout](#user-content-locations-in-detail-the-stack-in-detail-the-stack-data-layout)
+    * [The stack: Data layout](#user-content-locations-in-detail-the-stack-in-detail-the-stack-data-layout)
 * [Memory in detail](#user-content-locations-in-detail-memory-in-detail)
     * [Memory: Direct types and pointer types](#user-content-locations-in-detail-memory-in-detail-memory-direct-types-and-pointer-types)
     * [Memory: Multivalue types](#user-content-locations-in-detail-memory-in-detail-memory-multivalue-types)
@@ -554,7 +554,7 @@ see the section on [pointers to calldata from the
 stack](#user-content-locations-in-detail-calldata-in-detail-pointers-to-calldata-pointers-to-calldata-from-the-stack) for details.
 
 <a name="user-content-locations-in-detail-the-stack-in-detail-the-stack-data-layout"></a>
-#### The stack: data layout
+#### The stack: Data layout
 
 Stack variables are local variables, so naturally things will change as the
 contract executes.  But, we can still describe how things are at any given
