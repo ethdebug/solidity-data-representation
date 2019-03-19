@@ -9,8 +9,8 @@ For writers of line debuggers and other debugging-related utilities.
 | Author | Harry Altman [@haltman-at] |
 | -----------:|:------------ |
 | Published | 2018-12-26 - Boxing Day |
-| Last revised | 2019-3-18 |
-| Copyright | 2018-2019 Truffle |
+| Last revised | 2019-03-19 |
+| Copyright | 2018-2019 Truffle Blockchain Group |
 | License | <a rel="license" href="http://creativecommons.org/licenses/by/4.0/"><img alt="Creative Commons License" style="border-width:0" src="https://i.creativecommons.org/l/by/4.0/88x31.png" /></a> |
 | Document Source | [ethdebug/solidity-data-representation](https://github.com/ethdebug/solidity-data-representation) |
 
@@ -551,7 +551,7 @@ right [like in the other padded locations](#user-content-types-overview-overview
 
 The second two-word special case is that of pointers to calldata lookup types;
 see the section on [pointers to calldata from the
-stack](#user-content-locations-in-detail-calldata-in-detail-pointers-to-calldata-pointers-to-calldata-from-the-stack) for details.
+stack](#user-content-locations-in-detail-calldata-in-detail-pointers-to-calldata-from-the-stack) for details.
 
 <a name="user-content-locations-in-detail-the-stack-in-detail-the-stack-data-layout"></a>
 #### The stack: Data layout
@@ -565,15 +565,15 @@ The stack is of course not used only for storing local variables, but also as a
 working space.  And of course it also holds return addresses.  The stack is
 divided into stackframes; each stackframe begins with the return address.
 (There is no frame pointer, for those used to such a thing; just a return
-address.)  The exception is constructors, which do not include a return
-address.  In addition, if the initial function call (i.e. stackframe) of the
-EVM stackframe (i.e. message call or creation call) is not a constructor or
-fallback function, the function selector will be stored on the stack below the
-first stackframe.
+address.)  The exceptions are constructors and fallback functions, which do not
+include a return address.  In addition, if the initial function call (i.e.
+stackframe) of the EVM stackframe (i.e. message call or creation call) is not a
+constructor or fallback function, the function selector will be stored on the
+stack below the first stackframe.
 
-Note that only function calls create new stackframes; function modifiers and
-base constructor invocations (whether placed on the constructor or on the
-contract) do not create new stackframes.
+Note that function modifiers and base constructor invocations (whether placed
+on the constructor or on the contract) do not create new stackframes; these are
+part of the same stackframe as the function that invoked them.
 
 Within each stackframe, all variables are always stored below the workspace. So
 while the workspace may be unpredictable, we can ignore it for the purposes of
@@ -581,8 +581,8 @@ data layout within a given stackframe.  (Of course, the workspace in one
 stackframe does come between that stackframe's variables and the start of the
 next stackframe.)
 
-Restricting our attention the variables, then, the stack acts, as expected, as
-a stack; variables are pushed onto it when needed, and are popped off of it
+Restricting our attention to the variables, then, the stack acts, as expected,
+as a stack; variables are pushed onto it when needed, and are popped off of it
 when no longer needed.  These pushes and pops are arranged in a way that is
 compatible with the stack structure; i.e., they are in fact pushes and pops.
 
@@ -594,9 +594,9 @@ come the input parameters, in the order they were given, followed by the output
 parameters, in the order they were given.  Anonymous output parameters are
 treated the same as named output parameters for these purposes.
 
-Ordinary local variables, as declared in a function or modifier, have a are
-pushed onto the stack at their declaration and are popped when their containing
-block exits (for variables declared in the initializer of a `for` loop, the
+Ordinary local variables, as declared in a function or modifier, are pushed
+onto the stack at their declaration and are popped when their containing block
+exits (for variables declared in the initializer of a `for` loop, the
 containing block is considered to be the `for` loop).  If multiple variables
 are declared within a single statement, they go on the stack in the order they
 were declared within that statement.
