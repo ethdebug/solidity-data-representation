@@ -23,7 +23,6 @@ convention in memory, as [also detailed later](#user-content-locations-in-detail
 for now.)
 
 Memory and calldata will always be accessed through pointers to such; as such,
-we will only discuss concrete data layout for storage and (a little bit) for the
-stack, as those are the only locations we'll access without a pointer (but for
-the stack we'll mostly rely on the debugger having other ways of determining
-location).
+we will only discuss concrete data layout for storage and for the stack, as
+those are the only locations we'll access without a pointer (but for the stack
+we'll mostly rely on the debugger having other ways of determining location).

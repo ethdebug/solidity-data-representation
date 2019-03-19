@@ -112,7 +112,7 @@ of direct type always takes up a full slot.  (There are two exceptions to this
 -- the individual `byte`s in a `bytes` or `string` are packed rather than
 padded; and external functions take up *two* slots on the stack.  Both these
 will be described in more detail later ([1](#user-content-locations-in-detail-memory-in-detail-memory-lookup-types),
-[2](#user-content-locations-in-detail-the-stack-in-some-detail)).)  The exact method of padding varies by type,
+[2](#user-content-locations-in-detail-the-stack-in-detail)).)  The exact method of padding varies by type,
 as detailed in [the table below](#user-content-types-overview-overview-of-the-types-direct-types-table-of-direct-types).
 
 (Again, note that for calldata we are using a somewhat unusual notion of slot;
@@ -143,7 +143,7 @@ for more detail on how these types are actually represented.
 Some remarks:
 
 1. As the table states, external functions act a bit oddly on the stack; see the
-   [section on the stack](#user-content-locations-in-detail-the-stack-in-some-detail)
+   [section on the stack](#user-content-locations-in-detail-the-stack-in-detail-the-stack-direct-types-and-pointer-types)
    for details.
 2. The `ufixedMxN` and `fixedMxN` types are not implemented yet.  Their listed
    properies are largely inferred based on what we can expect.
@@ -192,7 +192,7 @@ beginning of code) of the beginning of said function (specifically, the
 External functions are represented by a 20-byte address and a 4-byte selector;
 in locations other than the stack, this consists of first the 20-byte address
 and then the 4-byte selector.  On the stack, however, it is more complicated.
-See the [section on the stack](#user-content-locations-in-detail-the-stack-in-some-detail) for details.
+See the [section on the stack](#user-content-locations-in-detail-the-stack-in-detail-the-stack-direct-types-and-pointer-types) for details.
 
 `ufixedMxN` and `fixedMxN` are interpreted as follows: If interpreting as a
 (`M`-bit, big-endian) binary number (unsigned or signed as appropriate) would
