@@ -24,7 +24,7 @@ The second two-word special case is that of pointers to calldata lookup types;
 see the section on [pointers to calldata from the
 stack](#user-content-locations-in-detail-calldata-in-detail-pointers-to-calldata-pointers-to-calldata-from-the-stack) for details.
 
-#### The stack: data layout
+#### The stack: Data layout
 
 Stack variables are local variables, so naturally things will change as the
 contract executes.  But, we can still describe how things are at any given
