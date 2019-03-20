@@ -17,20 +17,74 @@ right [like in the other padded locations](#user-content-types-overview-overview
 
 The second two-word special case is that of pointers to calldata lookup types;
 see the section on [pointers to calldata from the
-stack](#user-content-locations-in-detail-calldata-in-detail-pointers-to-calldata-pointers-to-calldata-from-the-stack) for details.
+stack](#user-content-locations-in-detail-calldata-in-detail-pointers-to-calldata-from-the-stack) for details.
 
-The stack is a bit unpredictable in terms of data layout, as it's also used as
-working space.  However, the location of local variables can be figured out by
-other parts of the debugger, so we won't go into it here.  The location of
-function parameters can also be figured out by the debugger, but we need to
-discuss here the order in which such parameters go on the stack, so let us do
-that.
+#### The stack: Data layout
 
-Function parameters go on the bottom of a function's stackframe, directly above
-the return address (if there is one -- constructors don't have them).  They go
-in the order of first input parameters, in the order they were given, followed
-by output parameters, in the order they were given.  Anonymous output parameters
-are treated the same as named output parameters for these purposes.
+Stack variables are local variables, so naturally things will change as the
+contract executes.  But, we can still describe how things are at any given
+time.  Note that if you are actually writing a debugger, you may want to rely
+on other systems to determine data layout on the stack.
+
+The stack is of course not used only for storing local variables, but also as a
+working space.  And of course it also holds return addresses.  The stack is
+divided into stackframes; each stackframe begins with the return address.
+(There is no frame pointer, for those used to such a thing; just a return
+address.)  The exceptions are constructors and fallback functions, which do not
+include a return address.  In addition, if the initial function call (i.e.
+stackframe) of the EVM stackframe (i.e. message call or creation call) is not a
+constructor or fallback function, the function selector will be stored on the
+stack below the first stackframe.
+
+Note that function modifiers and base constructor invocations (whether placed
+on the constructor or on the contract) do not create new stackframes; these are
+part of the same stackframe as the function that invoked them.
+
+Within each stackframe, all variables are always stored below the workspace. So
+while the workspace may be unpredictable, we can ignore it for the purposes of
+data layout within a given stackframe.  (Of course, the workspace in one
+stackframe does come between that stackframe's variables and the start of the
+next stackframe.)
+
+Restricting our attention to the variables, then, the stack acts, as expected,
+as a stack; variables are pushed onto it when needed, and are popped off of it
+when no longer needed.  These pushes and pops are arranged in a way that is
+compatible with the stack structure; i.e., they are in fact pushes and pops.
+
+The parameters of the function being called, including output parameters, are
+pushed onto the stack when the function is called and the stackframe is
+entered, and are not popped until the function, *including all modifiers*,
+exits.  It's necessary here to specify the order they go onto the stack.  First
+come the input parameters, in the order they were given, followed by the output
+parameters, in the order they were given.  Anonymous output parameters are
+treated the same as named output parameters for these purposes.
+
+Ordinary local variables, as declared in a function or modifier, are pushed
+onto the stack at their declaration and are popped when their containing block
+exits (for variables declared in the initializer of a `for` loop, the
+containing block is considered to be the `for` loop).  If multiple variables
+are declared within a single statement, they go on the stack in the order they
+were declared within that statement.
+
+Parameters to a modifier are pushed onto the stack when that modifier begins
+and are popped when that modifier exits.  Again, they go in the stack in the
+order they were given.  Note that (like other local variables declared in
+modifiers) these variables are still on the stack while the placeholder
+statement `_;` is running, even if they are inaccessible.  Remember that
+modifiers are run in order from left to right.
+
+This leaves the case of parameters to base constructor invocations (whether on
+the constructor or on the contract).  When a constructor is called, after its
+parameters have been pushed onto the stack, all parameters to all of its
+(direct) base constructor calls are pushed onto the stack.  They go on in order
+from left to right; that is, the order of the parameters within each base
+constructor call is from left to right, and the order of the base constructor
+calls' parameter regions is from left to right as well.  If the base
+constructor being invoked itself has base constructor invocations, then their
+parameters will be similarly pushed onto the stack when the base constructor
+begins (note that its own parameters will already be on the stack).  When a
+base constructor call exits, its parameters are popped from the stack (remember
+that base constructor calls are run in order from right to left).
 
 ### Memory in detail
 {"gitdown": "scroll-up", "upRef": "#user-content-locations-in-detail", "upTitle": "Back to Locations in Detail"}
