@@ -610,14 +610,16 @@ modifiers are run in order from left to right.
 
 This leaves the case of parameters to base constructor invocations (whether on
 the constructor or on the contract).  When a constructor is called, after its
-parameters' lifetimes have begun (after they are put on the stack), all
-parameters to all of its (direct) base constructor calls are pushed onto the
-stack.  They go on in order from left to right; that is, the order of the
-parameters within each base constructor call is from left to right, and the
-order of the base constructor calls' parameter regions is from left to right as
-well.  When a base constructor call exits, its parameters are popped from the
-stack (remember that base constructor calls are run in order from right to
-left).
+parameters have been pushed onto the stack, all parameters to all of its
+(direct) base constructor calls are pushed onto the stack.  They go on in order
+from left to right; that is, the order of the parameters within each base
+constructor call is from left to right, and the order of the base constructor
+calls' parameter regions is from left to right as well.  If the base
+constructor being invoked itself has base constructor invocations, then their
+parameters will be similarly pushed onto the stack when the base constructor
+begins (note that its own parameters will already be on the stack).  When a
+base constructor call exits, its parameters are popped from the stack (remember
+that base constructor calls are run in order from right to left).
 
 <a name="user-content-locations-in-detail-memory-in-detail"></a>
 ### Memory in detail
