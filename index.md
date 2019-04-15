@@ -307,14 +307,7 @@ Some remarks:
    for `ufixed128x18` and `fixed128x18`; and `byte` for `bytes1`.
 4. Each direct type's default value is simply whatever value is represented by
    a string of all zero bytes, with the one exception of internal functions in
-   locations other than storage.  In non-storage locations, the default value for
-   an internal function variable is a special function which throws an
-   `assert`-style exception (i.e. it reverts the transaction and consumes all
-   available gas).  This special function has the bytecode `0x5bfe` (a `JUMPDEST`
-   followed by an `INVALID`), but will only be included in the contract if
-   Solidity deems it necessary.  In storage, the default value for an internal
-   function is  `0`, which if called has the same effect, because the
-   instruction at address `0` will never be a `JUMPDEST`.
+   locations other than storage.  See [below](#user-content-types-overview-overview-of-the-types-direct-types-representations-of-direct-types) for more on this.
 5. The `N` in `uintN` and `intN` must be a multiple of 8, from 8 to 256.  The
    `M` in `ufixedMxN` and `fixedMxN` must be a multiple of 8, from 8 to 256,
    while `N` must be from 0 to 80.  The `N` in `bytesN` must be from 1 to 32.
@@ -341,9 +334,25 @@ Enums are represented by integers; the possibility listed first by `0`, the next
 by `1`, and so forth.  An enum type just acts like `uintN`, where `N` is the
 smallest legal value large enough to accomodate all the possibilities.
 
-Internal functions are represented by the code address (in bytes from the
-beginning of code) of the beginning of said function (specifically, the
-`JUMPDEST` instruction that begins it).
+Internal functions may be represented in one of two ways.  The bottom 4 bytes
+represented by the code address (in bytes from the beginning of code) of the
+beginning of said function (specifically, the `JUMPDEST` instruction that
+begins it).  If the value was set outside a constructor, the 4 bytes above that
+will be 0.  However, inside a constructor, the 4 bytes above that will instead
+be the code address of the function inside the constructor code rather than the
+deployed code.
+
+For internal functions, default values are also worth discussing, as in
+non-storage locations, they have a nonzero default value.  Outside of a
+constructor, the default value is a special function which throws an
+`assert`-style exception (i.e. it reverts the transaction and consumes all
+available gas).  This special function has the bytecode `0x5bfe` (a `JUMPDEST`
+followed by an `INVALID`), but will only be included in the contract if
+Solidity deems it necessary.  Inside a constructor, the default value is
+similar, except that it points to a function inside the constructor code rather
+than the deployed code; however, it points with the lower 4 bytes rather than
+the upper 4 bytes, so it doesn't actually work properly.  Regardless, it will
+almost certainly cause an assert-style exception.
 
 External functions are represented by a 20-byte address and a 4-byte selector;
 in locations other than the stack, this consists of first the 20-byte address
