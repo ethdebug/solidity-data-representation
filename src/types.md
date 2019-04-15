@@ -206,9 +206,11 @@ cannot be stored in a variable.  These are:
 1.  External functions with a specified amount of `gas` or `value` attached
     (even if that amount is zero).
 2.  External functions of libraries -- including library functions declared
-    `public` when not in that library -- because there is presently no way
-    to represent that they should be called with `DELEGATECALL`; and functions
-    created by `using ... for ...` directives.
+    `public` when not in that library -- because there is presently no way to
+    represent that they should be called with `DELEGATECALL`, and because they may
+    accept non-ABI types and thus have no signature according to the ABI
+    specification. This similarly includes functions created by `using ... for ...`
+    directives.
 3.  Special functions defined by the language.  This means globally available
     functions; functions which are members of arrays; functions which are
     members of addresses; and functions which are members of external functions.
