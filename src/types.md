@@ -187,16 +187,20 @@ be the code address of the function inside the constructor code rather than the
 deployed code.
 
 For internal functions, default values are also worth discussing, as in
-non-storage locations, they have a nonzero default value.  Outside of a
-constructor, the default value is a special function which throws an
-`assert`-style exception (i.e. it reverts the transaction and consumes all
-available gas).  This special function has the bytecode `0x5bfe` (a `JUMPDEST`
-followed by an `INVALID`), but will only be included in the contract if
-Solidity deems it necessary.  Inside a constructor, the default value is
-similar, except that it points to a function inside the constructor code rather
-than the deployed code; however, it points with the lower 4 bytes rather than
-the upper 4 bytes, so it doesn't actually work properly.  Regardless, it will
-almost certainly cause an assert-style exception.
+non-storage locations, they have a nonzero default value.  In contracts for
+which Solidity deems it necessary, there will be a special designated invalid
+function which throws an `assert`-style exception (i.e. it reverts the
+transaction and consumes all available gas).  This special function has the
+bytecode `0x5bfe` (a `JUMPDEST` followed by an `INVALID`), but, as mentioned,
+is only included if Solidity deems it necessary.  The default value for an
+internal function, outside of storage, is to point to this designated invalid
+function.  Otherwise these are encoded as above.
+
+*Remark*: Prior to Solidity 0.5.8 (or Solidity 0.4.26, in the 0.4.x line) there
+was a bug causing the default value for internal functions to be incorrectly
+encoded when it was set in a constructor.  It would have 0 for the upper 4
+bytes, and would have as the lower 4 bytes what the upper 4 bytes should have
+been.
 
 External functions are represented by a 20-byte address and a 4-byte selector;
 in locations other than the stack, this consists of first the 20-byte address
