@@ -129,34 +129,39 @@ for more detail on how these types are actually represented.
 | Type                | Size in storage (bytes)                     | Padding in padded locations             | Default value                             | Is value type? | Is elementary type? | Allowed in calldata? |
 |---------------------|---------------------------------------------|-----------------------------------------|-------------------------------------------|----------------|---------------------|----------------------|
 | `bool`              | 1                                           | Zero-padded, left                       | `false`                                   | Yes            | Yes                 | Yes                  |
-| `uintN`             | N/8                                         | Zero-padded, left                       | 0                                         | Yes            | Yes                 | Yes                  |
-| `intN`              | N/8                                         | Sign-padded, left                       | 0                                         | Yes            | Yes                 | Yes                  |
+| `uintN`             | N/8                                         | Zero-padded, left\*                     | 0                                         | Yes            | Yes                 | Yes                  |
+| `intN`              | N/8                                         | Sign-padded, left\*                     | 0                                         | Yes            | Yes                 | Yes                  |
 | `address [payable]` | 20                                          | Zero-padded, left                       | Zero address (not valid!)                 | Yes            | Yes                 | Yes                  |
 | `contract` types    | 20                                          | Zero-padded, left                       | Zero address (not valid!)                 | No             | No                  | Yes                  |
-| `bytesN`            | N                                           | Zero-padded, right                      | All zeroes                                | Yes            | Yes                 | Yes                  |
+| `bytesN`            | N                                           | Zero-padded, right\*                    | All zeroes                                | Yes            | Yes                 | Yes                  |
 | `enum` types        | As many as needed to hold all possibilities | Zero-padded, left                       | Whichever possibility is represented by 0 | Yes            | No                  | Yes                  |
 | `function internal` | 8                                           | Zero-padded, left                       | Depends on location, but always invalid   | No             | No                  | No                   |
 | `function external` | 24                                          | Zero-padded, right, except on the stack | Zero address, zero selector (not valid!)  | No             | No                  | Yes                  |
-| `ufixedMxN`         | M/8                                         | Zero-padded, left                       | 0                                         | Yes            | Yes                 | Yes                  |
-| `fixedMxN`          | M/8                                         | Sign-padded, left                       | 0                                         | Yes            | Yes                 | Yes                  |
+| `ufixedMxN`         | M/8                                         | Zero-padded, left\*                     | 0                                         | Yes            | Yes                 | Yes                  |
+| `fixedMxN`          | M/8                                         | Sign-padded, left\*                     | 0                                         | Yes            | Yes                 | Yes                  |
 
 Some remarks:
 
 1. As the table states, external functions act a bit oddly on the stack; see the
    [section on the stack](#user-content-locations-in-detail-the-stack-in-detail-the-stack-direct-types-and-pointer-types)
    for details.
-2. The `ufixedMxN` and `fixedMxN` types are not implemented yet.  Their listed
+2. Some types are marked with an asterisk regarding their padding.  These types
+   may have incorrect padding while on the stack due to operations that overflow.
+   Solidity will always restore the correct padding when it is necessary to do so;
+   however, it will not do this *until* it is necessary to do so.  So, be aware
+   that on the stack these types may be padded incorrectly.
+3. The `ufixedMxN` and `fixedMxN` types are not implemented yet.  Their listed
    properies are largely inferred based on what we can expect.
-3. Some direct types have aliases; these have not been listed in the above table.
+4. Some direct types have aliases; these have not been listed in the above table.
    `uint` and `int` are aliases for `uint256` and `int256`; `ufixed` and `fixed`
    for `ufixed128x18` and `fixed128x18`; and `byte` for `bytes1`.
-4. Each direct type's default value is simply whatever value is represented by
+5. Each direct type's default value is simply whatever value is represented by
    a string of all zero bytes, with the one exception of internal functions in
    locations other than storage.  See [below](#user-content-types-overview-overview-of-the-types-direct-types-representations-of-direct-types) for more on this.
-5. The `N` in `uintN` and `intN` must be a multiple of 8, from 8 to 256.  The
+6. The `N` in `uintN` and `intN` must be a multiple of 8, from 8 to 256.  The
    `M` in `ufixedMxN` and `fixedMxN` must be a multiple of 8, from 8 to 256,
    while `N` must be from 0 to 80.  The `N` in `bytesN` must be from 1 to 32.
-6. Function types are, of course, more complex than just their division into
+7. Function types are, of course, more complex than just their division into
    `internal` and `external`; they also have input parameter types, output
    parameter types, and mutability modifiers (`pure`, `view`, `payable`).
    However, these will not concern us here, and we will ignore them.
