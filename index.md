@@ -9,7 +9,7 @@ For writers of line debuggers and other debugging-related utilities.
 | Author | Harry Altman [@haltman-at] |
 | -----------:|:------------ |
 | Published | 2018-12-26 - Boxing Day |
-| Last revised | 2019-06-06 |
+| Last revised | 2019-06-07 |
 | Copyright | 2018-2019 Truffle Blockchain Group |
 | License | <a rel="license" href="http://creativecommons.org/licenses/by/4.0/"><img alt="Creative Commons License" style="border-width:0" src="https://i.creativecommons.org/l/by/4.0/88x31.png" /></a> |
 | Document Source | [ethdebug/solidity-data-representation](https://github.com/ethdebug/solidity-data-representation) |
@@ -286,8 +286,8 @@ for more detail on how these types are actually represented.
 | `bool`              | 1                                           | Zero-padded, left                       | `false`                                   | Yes            | Yes                 | Yes                  |
 | `uintN`             | N/8                                         | Zero-padded, left\*                     | 0                                         | Yes            | Yes                 | Yes                  |
 | `intN`              | N/8                                         | Sign-padded, left\*                     | 0                                         | Yes            | Yes                 | Yes                  |
-| `address [payable]` | 20                                          | Zero-padded, left                       | Zero address (not valid!)                 | Yes            | Yes                 | Yes                  |
-| `contract` types    | 20                                          | Zero-padded, left                       | Zero address (not valid!)                 | No             | No                  | Yes                  |
+| `address [payable]` | 20                                          | Zero-padded, left\*                     | Zero address (not valid!)                 | Yes            | Yes                 | Yes                  |
+| `contract` types    | 20                                          | Zero-padded, left\*                     | Zero address (not valid!)                 | No             | No                  | Yes                  |
 | `bytesN`            | N                                           | Zero-padded, right\*                    | All zeroes                                | Yes            | Yes                 | Yes                  |
 | `enum` types        | As many as needed to hold all possibilities | Zero-padded, left                       | Whichever possibility is represented by 0 | Yes            | No                  | Yes                  |
 | `function internal` | 8                                           | Zero-padded, left                       | Depends on location, but always invalid   | No             | No                  | No                   |
