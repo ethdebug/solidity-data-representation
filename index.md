@@ -9,7 +9,7 @@ For writers of line debuggers and other debugging-related utilities.
 | Author | Harry Altman [@haltman-at] |
 | -----------:|:------------ |
 | Published | 2018-12-26 - Boxing Day |
-| Last revised | 2019-06-11 |
+| Last revised | 2019-06-12 |
 | Copyright | 2018-2019 Truffle Blockchain Group |
 | License | <a rel="license" href="http://creativecommons.org/licenses/by/4.0/"><img alt="Creative Commons License" style="border-width:0" src="https://i.creativecommons.org/l/by/4.0/88x31.png" /></a> |
 | Document Source | [ethdebug/solidity-data-representation](https://github.com/ethdebug/solidity-data-representation) |
@@ -179,6 +179,10 @@ The term *reference types* refers collectively to multivalue and lookup types.
 A *static type* is either
 1. A direct type, or
 2. A multivalue type, all of whose element variables are also of static type.
+
+(*Remark*: In pre-0.5.0 versions of Solidity, when static-length of arrays of
+length 0 were allowed, these were automatically static regardless of the base
+type, since, after all, there are no element variables.)
 
 A *dynamic type* is any type that is not static.  (Pointers don't fit into this
 dichotomy, not being an actual Solidity type.)
@@ -965,7 +969,8 @@ are packed within storage](#user-content-locations-in-detail-storage-in-detail-s
 
 The one exceptions is that (in pre-0.5.0 versions of Solidity where this was
 legal) multivalue types with zero elements still take up a single word, rather
-than zero words.  (So, for instance, a `bytes1[0][3]` takes up 3 words.)
+than zero words.  (So, for instance, a `uint[2][0]` takes up 1 word, and a
+`bytes1[0][3]` takes up 3 words.)
 
 Again, remember that variables of multivalue type must occupy whole words; they
 start on a word boundary, and whatever comes after starts on a word boundary
