@@ -246,6 +246,9 @@ multiple element variables (of which there must be at least one) are as
 specified in the appropriate `struct` definition, and occur in the order
 specified there.
 
+*Remark*: Prior to Solidity 0.5.0, it was legal to have `type[0]` or empty
+structs.
+
 Note that it is legal to include a `mapping` type as an element of a `struct`
 type; this does *not* preclude the `struct` type from being used in memory (even
 though, as per the following section, mappings cannot appear in memory), but
