@@ -30,6 +30,10 @@ A *static type* is either
 1. A direct type, or
 2. A multivalue type, all of whose element variables are also of static type.
 
+(*Remark*: In pre-0.5.0 versions of Solidity, when static-length of arrays of
+length 0 were allowed, these were automatically static regardless of the base
+type, since, after all, there are no element variables.)
+
 A *dynamic type* is any type that is not static.  (Pointers don't fit into this
 dichotomy, not being an actual Solidity type.)
 

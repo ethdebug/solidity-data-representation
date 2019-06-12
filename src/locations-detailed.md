@@ -395,7 +395,8 @@ are packed within storage](#user-content-locations-in-detail-storage-in-detail-s
 
 The one exceptions is that (in pre-0.5.0 versions of Solidity where this was
 legal) multivalue types with zero elements still take up a single word, rather
-than zero words.  (So, for instance, a `bytes1[0][3]` takes up 3 words.)
+than zero words.  (So, for instance, a `uint[2][0]` takes up 1 word, and a
+`bytes1[0][3]` takes up 3 words.)
 
 Again, remember that variables of multivalue type must occupy whole words; they
 start on a word boundary, and whatever comes after starts on a word boundary
