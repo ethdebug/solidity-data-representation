@@ -9,7 +9,7 @@ For writers of line debuggers and other debugging-related utilities.
 | Author | Harry Altman [@haltman-at] |
 | -----------:|:------------ |
 | Published | 2018-12-26 - Boxing Day |
-| Last revised | 2019-06-07 |
+| Last revised | 2019-06-11 |
 | Copyright | 2018-2019 Truffle Blockchain Group |
 | License | <a rel="license" href="http://creativecommons.org/licenses/by/4.0/"><img alt="Creative Commons License" style="border-width:0" src="https://i.creativecommons.org/l/by/4.0/88x31.png" /></a> |
 | Document Source | [ethdebug/solidity-data-representation](https://github.com/ethdebug/solidity-data-representation) |
@@ -404,6 +404,9 @@ multiple element variables (of which there must be at least one) are as
 specified in the appropriate `struct` definition, and occur in the order
 specified there.
 
+*Remark*: Prior to Solidity 0.5.0, it was legal to have `type[0]` or empty
+structs.
+
 Note that it is legal to include a `mapping` type as an element of a `struct`
 type; this does *not* preclude the `struct` type from being used in memory (even
 though, as per the following section, mappings cannot appear in memory), but
@@ -679,11 +682,15 @@ reference types are stored as pointers).  Elements of structs go in the order
 they're specified in.
 
 Note that is possible to have in memory a struct that contains *only* mappings;
-such a struct doesn't really have a representation in memory, since in memory it
-has zero length (although it seems that it may be represented internally by a
-single word of all zeroes).  Of course, since we only access memory through
-pointers, if we are given a pointer to such a struct, we need not decode
-anything, as all of the struct's elements have been omitted.
+such a struct doesn't really have a representation in memory, since in memory
+it has zero length.  Of course, since we only access memory through pointers,
+if we are given a pointer to such a struct, we need not decode anything, as all
+of the struct's elements have been omitted.  The actual location pointed to
+may contain junk and should be ignored.
+
+(Prior to Solidity 0.5.0, it was also possible to have structs that are simply
+empty, as well as statically-sized arrays of length 0; the same note applies
+to such cases.)
 
 Note that it is possible to have circular structs -- not just circular struct
 types, but actual circular structs -- in memory.  This is not possible in any
@@ -785,6 +792,12 @@ below](#user-content-locations-in-detail-calldata-in-detail-pointers-to-calldata
 
 Also, structs that contain mappings are entirely illegal in calldata, unlike
 in memory where the mappings are simply omitted.
+
+*Remark*: Calldata variables were only introduced in Solidity 0.5.0, so it is
+impossible to have variables of zero-element multivalue type in calldata;
+however, it still may be worth noting for other purposes that in the underlying
+encoding, such variables are omitted entirely in calldata (unlike in storage
+where they still take up a single word, or memory where it varies).
 
 <a name="user-content-locations-in-detail-calldata-in-detail-calldata-multivalue-and-lookup-types-reference-types-the-special-variable-msg-data"></a>
 ##### The special variable <code>msg.data</code>
@@ -949,6 +962,10 @@ types in storage](#user-content-types-overview-overview-of-the-types-pointer-typ
 Variables of multivalue type simply have the elements stored consecutively
 within storage -- they are packed within the multivalue type [just as variables
 are packed within storage](#user-content-locations-in-detail-storage-in-detail-storage-data-layout).  The rules are exactly the same.
+
+The one exceptions is that (in pre-0.5.0 versions of Solidity where this was
+legal) multivalue types with zero elements still take up a single word, rather
+than zero words.  (So, for instance, a `bytes1[0][3]` takes up 3 words.)
 
 Again, remember that variables of multivalue type must occupy whole words; they
 start on a word boundary, and whatever comes after starts on a word boundary
