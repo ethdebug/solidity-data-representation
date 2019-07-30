@@ -9,7 +9,7 @@ For writers of line debuggers and other debugging-related utilities.
 | Author | Harry Altman [@haltman-at] |
 | -----------:|:------------ |
 | Published | 2018-12-26 - Boxing Day |
-| Last revised | 2019-06-12 |
+| Last revised | 2019-07-30 |
 | Copyright | 2018-2019 Truffle Blockchain Group |
 | License | <a rel="license" href="http://creativecommons.org/licenses/by/4.0/"><img alt="Creative Commons License" style="border-width:0" src="https://i.creativecommons.org/l/by/4.0/88x31.png" /></a> |
 | Document Source | [ethdebug/solidity-data-representation](https://github.com/ethdebug/solidity-data-representation) |
@@ -47,7 +47,7 @@ original value in calldata will always be copied onto the stack before use).
 Obviously the value still exists in calldata, but since no variable points
 there, it's not our concern.
 
-_**Note**: This document pertains to **Solidity v0.5.9**, current as of this
+_**Note**: This document pertains to **Solidity v0.5.10**, current as of this
 writing._
 
 
@@ -638,17 +638,19 @@ statement `_;` is running, even if they are inaccessible.  Remember that
 modifiers are run in order from left to right.
 
 This leaves the case of parameters to base constructor invocations (whether on
-the constructor or on the contract).  When a constructor is called, after its
-parameters have been pushed onto the stack, all parameters to all of its
-(direct) base constructor calls are pushed onto the stack.  They go on in order
-from left to right; that is, the order of the parameters within each base
-constructor call is from left to right, and the order of the base constructor
-calls' parameter regions is from left to right as well.  If the base
-constructor being invoked itself has base constructor invocations, then their
-parameters will be similarly pushed onto the stack when the base constructor
-begins (note that its own parameters will already be on the stack).  When a
-base constructor call exits, its parameters are popped from the stack (remember
-that base constructor calls are run in order from right to left).
+the constructor or on the contract).  When a constructor is called, not only
+are its parameters pushed onto the stack, but so are all the parameters to all
+of its base constructors -- not just the direct parents, but for all ancestors.
+They go on in order from most derived to most base, as determined by the usual
+[C3 order](https://en.wikipedia.org/wiki/C3_linearization)
+(discussed more in the [section on storage layout below](#user-content-locations-in-detail-storage-in-detail-storage-data-layout)).  Note that if
+the base constructors are listed on the constructor declaration, the order has
+no effect; only the order that the base classes are listed on the class
+declaration matters here.  Within each base constructor's parameter region, the
+parameters are pushed on in order from left to right.  Constructors then
+execute in order from most base to most derived (again, note that the order
+they're listed on the constructor declaration has no effect); when a
+constructor exits, its parameters are popped from the stack.
 
 <a name="user-content-locations-in-detail-memory-in-detail"></a>
 ### Memory in detail
