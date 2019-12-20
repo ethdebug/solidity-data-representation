@@ -121,22 +121,22 @@ Pointers, as mentioned above, always take up a full word.
 A multivalue type in memory is simply represented by concatenating together the
 representation of its elements; with the exceptions that elements of reference
 type (both multivalue and lookup types), other than mappings, are [represented
-as pointers](#user-content-locations-in-detail-memory-in-detail-pointers-to-memory); and that elements of `mapping` type are
-simply omitted, as mappings cannot appear in memory.  As such, each non-mapping
-element takes up exactly one word (because direct types are padded and all
-reference types are stored as pointers).  Elements of structs go in the order
-they're specified in.
+as
+pointers](#user-content-locations-in-detail-memory-in-detail-pointers-to-memory).
+(Also, prior to Solidity 0.5.0, elements of `mapping` type were allowed in
+memory structs and were simply omitted, as mappings cannot appear in memory.)
+As such, each (non-mapping) element takes up exactly one word (because direct
+types are padded and all reference types are stored as pointers).  Elements of
+structs go in the order they're specified in.
 
-Note that is possible to have in memory a struct that contains *only* mappings;
-such a struct doesn't really have a representation in memory, since in memory
-it has zero length.  Of course, since we only access memory through pointers,
-if we are given a pointer to such a struct, we need not decode anything, as all
-of the struct's elements have been omitted.  The actual location pointed to
-may contain junk and should be ignored.
-
-(Prior to Solidity 0.5.0, it was also possible to have structs that are simply
-empty, as well as statically-sized arrays of length 0; the same note applies
-to such cases.)
+(Note that prior to Solidity 0.6.0 it was possible to have in memory a struct
+that contains *only* mappings, and prior to 0.5.0, it was possible to have a
+struct that was empty entirely, or a statically-sized array of length 0.  Such
+a struct or array doesn't really have a representation in memory, since in
+memory it has zero length.  Of course, since we only access memory through
+pointers, if we are given a pointer to such a struct or array, we need not
+decode anything, as all of the struct's elements have been omitted.  The actual
+location pointed to may contain junk and should be ignored.)
 
 Note that it is possible to have circular structs -- not just circular struct
 types, but actual circular structs -- in memory.  This is not possible in any

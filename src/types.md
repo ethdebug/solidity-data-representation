@@ -66,9 +66,11 @@ being used; but we will assume it is.  Note, though, that circular types are nev
 allowed in calldata.
 
 In addition, the locations memory and calldata may not hold mappings, which may
-go only in storage.  (However, structs that *contain* mappings can go in memory,
-though the mappings will be omitted; see [the section on
-memory](#user-content-locations-in-detail-memory-in-detail-memory-lookup-types) for more detail.)
+go only in storage.  (However, structs that *contain* mappings were allowed in
+memory prior to Solidity 0.6.0, though the mappings would be omitted; see [the
+section on
+memory](#user-content-locations-in-detail-memory-in-detail-memory-lookup-types)
+for more detail.)
 
 Storage does not hold pointer types as there is never any reason for it to do
 so.
@@ -90,12 +92,12 @@ mentioned above):
 
 #### Table of types and locations
 
-| Location | Direct types                                       | Multivalue types                     | Lookup types            | Mappings in structs are... | Pointer types                                 |
-|----------|----------------------------------------------------|--------------------------------------|-------------------------|----------------------------|-----------------------------------------------|
-| Stack    | Yes                                                | No (only as pointers)                | No (only as pointers)   | N/A                        | To storage, memory, or calldata               |
-| Storage  | Yes                                                | Yes                                  | Yes                     | Legal                      | No                                            |
-| Memory   | Only as elements of other types                    | Yes                                  | Yes, excluding mappings | Omitted                    | To memory (only as elements of other types)   |
-| Calldata | Only as elements of other types, with restrictions | Yes, excluding circular struct types | Yes, excluding mappings | Illegal                    | To calldata (only as elements of other types) |
+| Location | Direct types                                       | Multivalue types                     | Lookup types            | Mappings in structs are...       | Pointer types                                 |
+|----------|----------------------------------------------------|--------------------------------------|-------------------------|----------------------------------|-----------------------------------------------|
+| Stack    | Yes                                                | No (only as pointers)                | No (only as pointers)   | N/A                              | To storage, memory, or calldata               |
+| Storage  | Yes                                                | Yes                                  | Yes                     | Legal                            | No                                            |
+| Memory   | Only as elements of other types                    | Yes                                  | Yes, excluding mappings | Illegal (omitted prior to 0.6.0) | To memory (only as elements of other types)   |
+| Calldata | Only as elements of other types, with restrictions | Yes, excluding circular struct types | Yes, excluding mappings | Illegal                          | To calldata (only as elements of other types) |
 
 Note that with the exception of the special case of mappings in structs, it is
 otherwise true that if the type of some element of some given type is illegal
