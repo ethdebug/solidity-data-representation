@@ -9,7 +9,7 @@ For writers of line debuggers and other debugging-related utilities.
 | Author | Harry Altman [@haltman-at] |
 | -----------:|:------------ |
 | Published | 2018-12-26 - Boxing Day |
-| Last revised | 2019-07-30 |
+| Last revised | 2019-12-19 |
 | Copyright | 2018-2019 Truffle Blockchain Group |
 | License | <a rel="license" href="http://creativecommons.org/licenses/by/4.0/"><img alt="Creative Commons License" style="border-width:0" src="https://i.creativecommons.org/l/by/4.0/88x31.png" /></a> |
 | Document Source | [ethdebug/solidity-data-representation](https://github.com/ethdebug/solidity-data-representation) |
@@ -47,7 +47,7 @@ original value in calldata will always be copied onto the stack before use).
 Obviously the value still exists in calldata, but since no variable points
 there, it's not our concern.
 
-_**Note**: This document pertains to **Solidity v0.5.10**, current as of this
+_**Note**: This document pertains to **Solidity v0.6.0**, current as of this
 writing._
 
 
@@ -217,9 +217,11 @@ being used; but we will assume it is.  Note, though, that circular types are nev
 allowed in calldata.
 
 In addition, the locations memory and calldata may not hold mappings, which may
-go only in storage.  (However, structs that *contain* mappings can go in memory,
-though the mappings will be omitted; see [the section on
-memory](#user-content-locations-in-detail-memory-in-detail-memory-lookup-types) for more detail.)
+go only in storage.  (However, structs that *contain* mappings were allowed in
+memory prior to Solidity 0.6.0, though the mappings would be omitted; see [the
+section on
+memory](#user-content-locations-in-detail-memory-in-detail-memory-lookup-types)
+for more detail.)
 
 Storage does not hold pointer types as there is never any reason for it to do
 so.
@@ -242,12 +244,12 @@ mentioned above):
 <a name="user-content-types-overview-types-and-locations-table-of-types-and-locations"></a>
 #### Table of types and locations
 
-| Location | Direct types                                       | Multivalue types                     | Lookup types            | Mappings in structs are... | Pointer types                                 |
-|----------|----------------------------------------------------|--------------------------------------|-------------------------|----------------------------|-----------------------------------------------|
-| Stack    | Yes                                                | No (only as pointers)                | No (only as pointers)   | N/A                        | To storage, memory, or calldata               |
-| Storage  | Yes                                                | Yes                                  | Yes                     | Legal                      | No                                            |
-| Memory   | Only as elements of other types                    | Yes                                  | Yes, excluding mappings | Omitted                    | To memory (only as elements of other types)   |
-| Calldata | Only as elements of other types, with restrictions | Yes, excluding circular struct types | Yes, excluding mappings | Illegal                    | To calldata (only as elements of other types) |
+| Location | Direct types                                       | Multivalue types                     | Lookup types            | Mappings in structs are...       | Pointer types                                 |
+|----------|----------------------------------------------------|--------------------------------------|-------------------------|----------------------------------|-----------------------------------------------|
+| Stack    | Yes                                                | No (only as pointers)                | No (only as pointers)   | N/A                              | To storage, memory, or calldata               |
+| Storage  | Yes                                                | Yes                                  | Yes                     | Legal                            | No                                            |
+| Memory   | Only as elements of other types                    | Yes                                  | Yes, excluding mappings | Illegal (omitted prior to 0.6.0) | To memory (only as elements of other types)   |
+| Calldata | Only as elements of other types, with restrictions | Yes, excluding circular struct types | Yes, excluding mappings | Illegal                          | To calldata (only as elements of other types) |
 
 Note that with the exception of the special case of mappings in structs, it is
 otherwise true that if the type of some element of some given type is illegal
@@ -681,22 +683,22 @@ Pointers, as mentioned above, always take up a full word.
 A multivalue type in memory is simply represented by concatenating together the
 representation of its elements; with the exceptions that elements of reference
 type (both multivalue and lookup types), other than mappings, are [represented
-as pointers](#user-content-locations-in-detail-memory-in-detail-pointers-to-memory); and that elements of `mapping` type are
-simply omitted, as mappings cannot appear in memory.  As such, each non-mapping
-element takes up exactly one word (because direct types are padded and all
-reference types are stored as pointers).  Elements of structs go in the order
-they're specified in.
+as
+pointers](#user-content-locations-in-detail-memory-in-detail-pointers-to-memory).
+(Also, prior to Solidity 0.5.0, elements of `mapping` type were allowed in
+memory structs and were simply omitted, as mappings cannot appear in memory.)
+As such, each (non-mapping) element takes up exactly one word (because direct
+types are padded and all reference types are stored as pointers).  Elements of
+structs go in the order they're specified in.
 
-Note that is possible to have in memory a struct that contains *only* mappings;
-such a struct doesn't really have a representation in memory, since in memory
-it has zero length.  Of course, since we only access memory through pointers,
-if we are given a pointer to such a struct, we need not decode anything, as all
-of the struct's elements have been omitted.  The actual location pointed to
-may contain junk and should be ignored.
-
-(Prior to Solidity 0.5.0, it was also possible to have structs that are simply
-empty, as well as statically-sized arrays of length 0; the same note applies
-to such cases.)
+(Note that prior to Solidity 0.6.0 it was possible to have in memory a struct
+that contains *only* mappings, and prior to 0.5.0, it was possible to have a
+struct that was empty entirely, or a statically-sized array of length 0.  Such
+a struct or array doesn't really have a representation in memory, since in
+memory it has zero length.  Of course, since we only access memory through
+pointers, if we are given a pointer to such a struct or array, we need not
+decode anything, as all of the struct's elements have been omitted.  The actual
+location pointed to may contain junk and should be ignored.)
 
 Note that it is possible to have circular structs -- not just circular struct
 types, but actual circular structs -- in memory.  This is not possible in any
