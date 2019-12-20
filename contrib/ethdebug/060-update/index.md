@@ -683,7 +683,8 @@ Pointers, as mentioned above, always take up a full word.
 A multivalue type in memory is simply represented by concatenating together the
 representation of its elements; with the exceptions that elements of reference
 type (both multivalue and lookup types), other than mappings, are [represented
-as pointers](#user-content-locations-in-detail-memory-in-detail-pointers-to-memory).
+as
+pointers](#user-content-locations-in-detail-memory-in-detail-pointers-to-memory).
 (Also, prior to Solidity 0.5.0, elements of `mapping` type were allowed in
 memory structs and were simply omitted, as mappings cannot appear in memory.)
 As such, each (non-mapping) element takes up exactly one word (because direct
