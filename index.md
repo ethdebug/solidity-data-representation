@@ -9,7 +9,7 @@ For writers of line debuggers and other debugging-related utilities.
 | Author | Harry Altman [@haltman-at] |
 | -----------:|:------------ |
 | Published | 2018-12-26 - Boxing Day |
-| Last revised | 2019-12-19 |
+| Last revised | 2020-03-04 |
 | Copyright | 2018-2019 Truffle Blockchain Group |
 | License | <a rel="license" href="http://creativecommons.org/licenses/by/4.0/"><img alt="Creative Commons License" style="border-width:0" src="https://i.creativecommons.org/l/by/4.0/88x31.png" /></a> |
 | Document Source | [ethdebug/solidity-data-representation](https://github.com/ethdebug/solidity-data-representation) |
@@ -47,7 +47,7 @@ original value in calldata will always be copied onto the stack before use).
 Obviously the value still exists in calldata, but since no variable points
 there, it's not our concern.
 
-_**Note**: This document pertains to **Solidity v0.6.0**, current as of this
+_**Note**: This document pertains to **Solidity v0.6.3**, current as of this
 writing._
 
 
@@ -293,9 +293,9 @@ for more detail on how these types are actually represented.
 | `uintN`             | N/8                                         | Zero-padded, left\*                     | 0                                         | Yes            | Yes                 | Yes                  |
 | `intN`              | N/8                                         | Sign-padded, left\*                     | 0                                         | Yes            | Yes                 | Yes                  |
 | `address [payable]` | 20                                          | Zero-padded, left\*                     | Zero address (not valid!)                 | Yes            | Yes                 | Yes                  |
-| `contract` types    | 20                                          | Zero-padded, left\*                     | Zero address (not valid!)                 | No             | No                  | Yes                  |
+| `contract` types    | 20                                          | Zero-padded, left\*                     | Zero address (not valid!)                 | No             | Yes                 | Yes                  |
 | `bytesN`            | N                                           | Zero-padded, right\*                    | All zeroes                                | Yes            | Yes                 | Yes                  |
-| `enum` types        | As many as needed to hold all possibilities | Zero-padded, left                       | Whichever possibility is represented by 0 | Yes            | No                  | Yes                  |
+| `enum` types        | As many as needed to hold all possibilities | Zero-padded, left                       | Whichever possibility is represented by 0 | Yes            | Yes                 | Yes                  |
 | `function internal` | 8                                           | Zero-padded, left                       | Depends on location, but always invalid   | No             | No                  | No                   |
 | `function external` | 24                                          | Zero-padded, right, except on the stack | Zero address, zero selector (not valid!)  | No             | No                  | Yes                  |
 | `ufixedMxN`         | M/8                                         | Zero-padded, left\*                     | 0                                         | Yes            | Yes                 | Yes                  |
@@ -454,7 +454,7 @@ As mentioned above, mappings can go only in storage (but [see previous
 section](#user-content-types-overview-overview-of-the-types-multivalue-types) about mappings in structs).
 The key type for a mapping must be an elementary type, which means either:
 
-1. A value type other than an `enum` type, or
+1. Either a value type or a `contract` type, or
 2. One of `string` or `bytes`.
 
 Observe that elementary types may all be meaningfully converted to a string of
