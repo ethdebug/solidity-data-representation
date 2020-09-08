@@ -129,7 +129,7 @@ As such, each (non-mapping) element takes up exactly one word (because direct
 types are padded and all reference types are stored as pointers).  Elements of
 structs go in the order they're specified in.
 
-(Note that prior to Solidity 0.6.0 it was possible to have in memory a struct
+(Note that prior to Solidity 0.7.0 it was possible to have in memory a struct
 that contains *only* mappings, and prior to 0.5.0, it was possible to have a
 struct that was empty entirely, or a statically-sized array of length 0.  Such
 a struct or array doesn't really have a representation in memory, since in
