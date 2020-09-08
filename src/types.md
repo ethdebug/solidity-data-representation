@@ -361,5 +361,5 @@ it's illegal to delete them.
 | Pointer to storage                                   | Absolute                     | Words          | No                          | `0` (may be garbage, don't use!)                               |
 | Pointer to memory                                    | Absolute                     | Bytes          | No                          | `0x60` for lookup types; no fixed default for multivalue types |
 | Pointer to calldata from calldata                    | Relative (in an unusual way) | Bytes          | No                          | N/A                                                            |
-| Pointer to calldata multivalue type from the stack   | Absolute                     | Bytes          | No                          | N/A                                                            |
-| Pointer to calldata lookup type from the stack       | Absolute (with an offset)    | Bytes          | Yes                         | N/A                                                            |
+| Pointer to calldata multivalue type from the stack   | Absolute                     | Bytes          | No                          | Equal to the length of calldata                                |
+| Pointer to calldata lookup type from the stack       | Absolute (with an offset)    | Bytes          | Yes                         | Equal to the length of calldata, length equal to zero          |
