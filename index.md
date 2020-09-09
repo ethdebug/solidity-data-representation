@@ -9,7 +9,7 @@ For writers of line debuggers and other debugging-related utilities.
 | Author | Harry Altman [@haltman-at] |
 | -----------:|:------------ |
 | Published | 2018-12-26 - Boxing Day |
-| Last revised | 2020-03-04 |
+| Last revised | 2020-09-08 |
 | Copyright | 2018-2019 Truffle Blockchain Group |
 | License | <a rel="license" href="http://creativecommons.org/licenses/by/4.0/"><img alt="Creative Commons License" style="border-width:0" src="https://i.creativecommons.org/l/by/4.0/88x31.png" /></a> |
 | Document Source | [ethdebug/solidity-data-representation](https://github.com/ethdebug/solidity-data-representation) |
@@ -28,9 +28,9 @@ is not entirely predictable but may be determined by other
 systems of the debugger, we may rely on that.  See the
 [Solidity documentation](https://solidity.readthedocs.io/) for things not
 covered here, particularly the
-[section on types](https://solidity.readthedocs.io/en/v0.5.2/solidity-in-depth.html),
-the [ABI specification](https://solidity.readthedocs.io/en/v0.5.2/abi-spec.html),
-and the [miscellaneous section](https://solidity.readthedocs.io/en/v0.5.2/miscellaneous.html);
+[section on types](https://solidity.readthedocs.io/en/v0.7.1/solidity-in-depth.html),
+the [ABI specification](https://solidity.readthedocs.io/en/v0.7.1/abi-spec.html),
+and the [miscellaneous section](https://solidity.readthedocs.io/en/v0.7.1/miscellaneous.html);
 and perhaps also see the [Ethereum yellow paper](https://ethereum.github.io/yellowpaper/paper.pdf).
 
 This document is also primarily only concerned with variables that a user might
@@ -47,7 +47,7 @@ original value in calldata will always be copied onto the stack before use).
 Obviously the value still exists in calldata, but since no variable points
 there, it's not our concern.
 
-_**Note**: This document pertains to **Solidity v0.6.3**, current as of this
+_**Note**: This document pertains to **Solidity v0.7.1**, current as of this
 writing._
 
 
@@ -74,8 +74,12 @@ writing._
     * [The stack in detail](#user-content-locations-in-detail-the-stack-in-detail)
         * [The stack: Direct types and pointer types](#user-content-locations-in-detail-the-stack-in-detail-the-stack-direct-types-and-pointer-types)
         * [The stack: Data layout](#user-content-locations-in-detail-the-stack-in-detail-the-stack-data-layout)
+    * [Code in detail](#user-content-locations-in-detail-code-in-detail)
+        * [Code: direct types](#user-content-locations-in-detail-code-in-detail-code-direct-types)
+        * [Code: data layout](#user-content-locations-in-detail-code-in-detail-code-data-layout)
     * [Memory in detail](#user-content-locations-in-detail-memory-in-detail)
         * [Memory: Direct types and pointer types](#user-content-locations-in-detail-memory-in-detail-memory-direct-types-and-pointer-types)
+        * [Layout of immutables in memory](#user-content-locations-in-detail-memory-in-detail-layout-of-immutables-in-memory)
         * [Memory: Multivalue types](#user-content-locations-in-detail-memory-in-detail-memory-multivalue-types)
         * [Memory: Lookup types](#user-content-locations-in-detail-memory-in-detail-memory-lookup-types)
         * [Pointers to memory](#user-content-locations-in-detail-memory-in-detail-pointers-to-memory)
@@ -100,33 +104,35 @@ writing._
 <sup>[ [&and;](#user-content-contents) _Back to contents_ ]</sup>
 
 The EVM has a number of locations where data can be stored.  We will be
-concerned with four of them: The stack, storage, memory, and calldata.  (We will
-also be incidentally concerned with code, but we will mostly ignore it.  We will
-ignore returndata entirely.  There are also some other "special locations" that
+concerned with five of them: The stack, storage, memory, calldata, and code.
+(We will ignore returndata.  There are also some other "special locations" that
 I will mention briefly in the calldata section but will mostly ignore.)
 
-The stack and storage are made of words ("slots"), while memory and calldata are
-made of bytes; however, we will basically ignore this distinction.  We will, for
-the stack and storage, conventionally consider the large end of each word to be
-the earlier (left) end; and, for the other locations, conventionally consider
-the location as divided up into words ("slots") of 32 bytes, with the earlier
-end of each word being the large end.  Or, in other words, everything is
-big-endian (or construed as big-endian) unless stated otherwise.  With this
+The stack and storage are made of words ("slots"), while memory, calldata, and
+code are made of bytes; however, we will basically ignore this distinction.  We
+will, for the stack and storage, conventionally consider the large end of each
+word to be the earlier (left) end; and, for the other locations, conventionally
+consider the location as divided up into words ("slots") of 32 bytes, with the
+earlier end of each word being the large end.  Or, in other words, everything
+is big-endian (or construed as big-endian) unless stated otherwise.  With this
 convention, we can ignore the distinction between the slot-based locations and
-the byte-based locations.  (My apologies in advance for the abuse of terminology
-that results from this, but I think using this convention here saves more
-trouble than it causes.)
+the byte-based locations.  (My apologies in advance for the abuse of
+terminology that results from this, but I think using this convention here
+saves more trouble than it causes.)
 
 (For calldata, we will actually use a slightly different convention, as
 [detailed later](#user-content-locations-in-detail-calldata-in-detail-slots-in-calldata-and-the-offset),
 but you can ignore that for now.  We will also occasionally use a different
 convention in memory, as [also detailed later](#user-content-locations-in-detail-memory-in-detail), but you can again ignore that
-for now.)
+for now.  Also, we will ignore the notion of "slots" in the case of code.)
 
-Memory and calldata will always be accessed through pointers to such; as such,
-we will only discuss concrete data layout for storage and for the stack, as
-those are the only locations we'll access without a pointer (but for the stack
-we'll mostly rely on the debugger having other ways of determining location).
+Memory (with one exception to be [described
+later](#user-content-locations-in-detail-memory-in-detail)) and calldata will
+always be accessed through pointers to such; as such, we will only discuss
+concrete data layout for storage, the stack, and code, as those are the only
+locations we'll access without a pointer (but for the stack we'll mostly rely
+on the debugger having other ways of determining location, and for code we'll
+rely on other compiler output).
 
 
 <a name="user-content-types-overview"></a>
@@ -216,10 +222,15 @@ Some types are not allowed in calldata, especially if `ABIEncoderV2` is not
 being used; but we will assume it is.  Note, though, that circular types are never
 allowed in calldata.
 
+Only direct types may go in code as immutables; moreover, variables of type
+`function external` cannot presently go in code this way.  (Nor can they go
+in memory as immutables, when memory is being used to store immutables.)
+
 In addition, the locations memory and calldata may not hold mappings, which may
-go only in storage.  (However, structs that *contain* mappings were allowed in
-memory prior to Solidity 0.6.0, though the mappings would be omitted; see [the
-section on
+go only in storage.  (However, structs that *contain* mappings, or that contain
+(possibly multidimensional) arrays of mappings, were allowed in memory prior to
+Solidity 0.7.0, though such mappings or arrrays would be omitted from the
+struct; see [the section on
 memory](#user-content-locations-in-detail-memory-in-detail-memory-lookup-types)
 for more detail.)
 
@@ -244,16 +255,19 @@ mentioned above):
 <a name="user-content-types-overview-types-and-locations-table-of-types-and-locations"></a>
 #### Table of types and locations
 
-| Location | Direct types                                       | Multivalue types                     | Lookup types            | Mappings in structs are...       | Pointer types                                 |
-|----------|----------------------------------------------------|--------------------------------------|-------------------------|----------------------------------|-----------------------------------------------|
-| Stack    | Yes                                                | No (only as pointers)                | No (only as pointers)   | N/A                              | To storage, memory, or calldata               |
-| Storage  | Yes                                                | Yes                                  | Yes                     | Legal                            | No                                            |
-| Memory   | Only as elements of other types                    | Yes                                  | Yes, excluding mappings | Illegal (omitted prior to 0.6.0) | To memory (only as elements of other types)   |
-| Calldata | Only as elements of other types, with restrictions | Yes, excluding circular struct types | Yes, excluding mappings | Illegal                          | To calldata (only as elements of other types) |
+| Location | Direct types                                       | Multivalue types                     | Lookup types            | Mappings and arrays of such in structs are... | Pointer types                                 |
+|----------|----------------------------------------------------|--------------------------------------|-------------------------|-----------------------------------------------|-----------------------------------------------|
+| Stack    | Yes                                                | No (only as pointers)                | No (only as pointers)   | N/A                                           | To storage, memory, or calldata               |
+| Storage  | Yes                                                | Yes                                  | Yes                     | Legal                                         | No                                            |
+| Memory   | Only as elements of other types or as immutables   | Yes                                  | Yes, excluding mappings | Illegal (omitted prior to 0.7.0)              | To memory (only as elements of other types)   |
+| Calldata | Only as elements of other types, with restrictions | Yes, excluding circular struct types | Yes, excluding mappings | Illegal                                       | To calldata (only as elements of other types) |
+| Code     | Yes, with restrictions                             | No                                   | No                      | N/A                                           | No                                            |
 
-Note that with the exception of the special case of mappings in structs, it is
-otherwise true that if the type of some element of some given type is illegal
-in that location, then so is the type as a whole.
+Note that with the exception of the special case of mappings (or possibly
+multidimensional arrays of such) in structs, it is otherwise true that if the
+type of some element of some given type is illegal in that location, then so is
+the type as a whole.  Also, immutables in memory have the same restrictions that
+they do in code.
 
 <a name="user-content-types-overview-overview-of-the-types-direct-types"></a>
 ### Overview of the types: Direct types
@@ -267,17 +281,22 @@ of direct type may share a storage slot, within which each variable only takes
 up as much space as it need to; see the table below for information on sizes.
 (Note that variables of direct type may not cross word boundaries.)
 
-The stack, memory, and calldata, however, are padded locations -- each variable
-of direct type always takes up a full slot.  (There are two exceptions to this
--- the individual `byte`s in a `bytes` or `string` are packed rather than
-padded; and external functions take up *two* slots on the stack.  Both these
-will be described in more detail later ([1](#user-content-locations-in-detail-memory-in-detail-memory-lookup-types),
-[2](#user-content-locations-in-detail-the-stack-in-detail)).)  The exact method of padding varies by type,
-as detailed in [the table below](#user-content-types-overview-overview-of-the-types-direct-types-table-of-direct-types).
+The stack, memory, calldata, and code, however, are padded locations -- each
+variable of direct type always takes up a full slot.  (There are two exceptions
+to this -- the individual `byte`s in a `bytes` or `string` are packed rather
+than padded; and external functions take up *two* slots on the stack.  Both
+these will be described in more detail later
+([1](#user-content-locations-in-detail-memory-in-detail-memory-lookup-types),
+[2](#user-content-locations-in-detail-the-stack-in-detail)).)  The exact method
+of padding varies by type, as detailed in [the table
+below](#user-content-types-overview-overview-of-the-types-direct-types-table-of-direct-types).
+Note that immutables have slightly unusual padding, whether stored in code or
+memory, as will be detailed later ([1](#user-content-locations-in-detail-code-in-detail-code-direct-types), [2](#user-content-locations-in-detail-memory-in-detail-memory-direct-types-and-pointer-types)).
 
 (Again, note that for calldata we are using a somewhat unusual notion of slot;
-[see the calldata section](#user-content-locations-in-detail-calldata-in-detail-slots-in-calldata-and-the-offset) for more
-information.)
+[see the calldata
+section](#user-content-locations-in-detail-calldata-in-detail-slots-in-calldata-and-the-offset)
+for more information.)
 
 <a name="user-content-types-overview-overview-of-the-types-direct-types-table-of-direct-types"></a>
 #### Table of direct types
@@ -287,42 +306,48 @@ properties.  Some of this information may not yet make sense if you have only
 read up to this point.  See the [next section](#user-content-types-overview-overview-of-the-types-direct-types-representations-of-direct-types)
 for more detail on how these types are actually represented.
 
-| Type                | Size in storage (bytes)                     | Padding in padded locations             | Default value                             | Is value type? | Is elementary type? | Allowed in calldata? |
-|---------------------|---------------------------------------------|-----------------------------------------|-------------------------------------------|----------------|---------------------|----------------------|
-| `bool`              | 1                                           | Zero-padded, left                       | `false`                                   | Yes            | Yes                 | Yes                  |
-| `uintN`             | N/8                                         | Zero-padded, left\*                     | 0                                         | Yes            | Yes                 | Yes                  |
-| `intN`              | N/8                                         | Sign-padded, left\*                     | 0                                         | Yes            | Yes                 | Yes                  |
-| `address [payable]` | 20                                          | Zero-padded, left\*                     | Zero address (not valid!)                 | Yes            | Yes                 | Yes                  |
-| `contract` types    | 20                                          | Zero-padded, left\*                     | Zero address (not valid!)                 | No             | Yes                 | Yes                  |
-| `bytesN`            | N                                           | Zero-padded, right\*                    | All zeroes                                | Yes            | Yes                 | Yes                  |
-| `enum` types        | As many as needed to hold all possibilities | Zero-padded, left                       | Whichever possibility is represented by 0 | Yes            | Yes                 | Yes                  |
-| `function internal` | 8                                           | Zero-padded, left                       | Depends on location, but always invalid   | No             | No                  | No                   |
-| `function external` | 24                                          | Zero-padded, right, except on the stack | Zero address, zero selector (not valid!)  | No             | No                  | Yes                  |
-| `ufixedMxN`         | M/8                                         | Zero-padded, left\*                     | 0                                         | Yes            | Yes                 | Yes                  |
-| `fixedMxN`          | M/8                                         | Sign-padded, left\*                     | 0                                         | Yes            | Yes                 | Yes                  |
+| Type                | Size in storage (bytes)                     | Padding in most padded locations        | Default value                             | Is value type? | Is elementary? | Allowed in calldata? | Allowed as immutable?|
+|---------------------|---------------------------------------------|-----------------------------------------|-------------------------------------------|----------------|----------------|----------------------|----------------------|
+| `bool`              | 1                                           | Zero-padded, left                       | `false`                                   | Yes            | Yes            | Yes                  | Yes                  |
+| `uintN`             | N/8                                         | Zero-padded, left\*                     | 0                                         | Yes            | Yes            | Yes                  | Yes                  |
+| `intN`              | N/8                                         | Sign-padded, left\*                     | 0                                         | Yes            | Yes            | Yes                  | Yes                  |
+| `address [payable]` | 20                                          | Zero-padded, left\*                     | Zero address (not valid!)                 | Yes            | Yes            | Yes                  | Yes                  |
+| `contract` types    | 20                                          | Zero-padded, left\*                     | Zero address (not valid!)                 | No             | Yes            | Yes                  | Yes                  |
+| `bytesN`            | N                                           | Zero-padded, right\*                    | All zeroes                                | Yes            | Yes            | Yes                  | Yes                  |
+| `enum` types        | As many as needed to hold all possibilities | Zero-padded, left                       | Whichever possibility is represented by 0 | Yes            | Yes            | Yes                  | Yes                  |
+| `function internal` | 8                                           | Zero-padded, left                       | Depends on location, but always invalid   | No             | No             | No                   | Yes                  |
+| `function external` | 24                                          | Zero-padded, right, except on the stack | Zero address, zero selector (not valid!)  | No             | No             | Yes                  | No                   |
+| `ufixedMxN`         | M/8                                         | Zero-padded, left\*                     | 0                                         | Yes            | Yes            | Yes                  | Yes                  |
+| `fixedMxN`          | M/8                                         | Sign-padded, left\*                     | 0                                         | Yes            | Yes            | Yes                  | Yes                  |
 
 Some remarks:
 
 1. As the table states, external functions act a bit oddly on the stack; see the
    [section on the stack](#user-content-locations-in-detail-the-stack-in-detail-the-stack-direct-types-and-pointer-types)
    for details.
-2. Some types are marked with an asterisk regarding their padding.  These types
+2. Padding works a bit differently in code; in code, all types are zero-padded,
+   even if they would ordinarily be sign-padded.  This does not affect which side
+   they are padded on.
+3. Padding also works a bit differently for immutables stored in memory during contract
+   construction.  In this context, all types are zero-padded on the right,
+   regardless of their usual padding.
+4. Some types are marked with an asterisk regarding their padding.  These types
    may have incorrect padding while on the stack due to operations that overflow.
    Solidity will always restore the correct padding when it is necessary to do so;
    however, it will not do this *until* it is necessary to do so.  So, be aware
    that on the stack these types may be padded incorrectly.
-3. The `ufixedMxN` and `fixedMxN` types are not implemented yet.  Their listed
+5. The `ufixedMxN` and `fixedMxN` types are not implemented yet.  Their listed
    properies are largely inferred based on what we can expect.
-4. Some direct types have aliases; these have not been listed in the above table.
+6. Some direct types have aliases; these have not been listed in the above table.
    `uint` and `int` are aliases for `uint256` and `int256`; `ufixed` and `fixed`
    for `ufixed128x18` and `fixed128x18`; and `byte` for `bytes1`.
-5. Each direct type's default value is simply whatever value is represented by
+7. Each direct type's default value is simply whatever value is represented by
    a string of all zero bytes, with the one exception of internal functions in
    locations other than storage.  See [below](#user-content-types-overview-overview-of-the-types-direct-types-representations-of-direct-types) for more on this.
-6. The `N` in `uintN` and `intN` must be a multiple of 8, from 8 to 256.  The
+8. The `N` in `uintN` and `intN` must be a multiple of 8, from 8 to 256.  The
    `M` in `ufixedMxN` and `fixedMxN` must be a multiple of 8, from 8 to 256,
    while `N` must be from 0 to 80.  The `N` in `bytesN` must be from 1 to 32.
-7. Function types are, of course, more complex than just their division into
+9. Function types are, of course, more complex than just their division into
    `internal` and `external`; they also have input parameter types, output
    parameter types, and mutability modifiers (`pure`, `view`, `payable`).
    However, these will not concern us here, and we will ignore them.
@@ -413,12 +438,15 @@ specified there.
 *Remark*: Prior to Solidity 0.5.0, it was legal to have `type[0]` or empty
 structs.
 
-Note that it is legal to include a `mapping` type as an element of a `struct`
-type; this does *not* preclude the `struct` type from being used in memory (even
-though, as per the following section, mappings cannot appear in memory), but
-rather, the mapping is simply omitted in memory.  See the [memory
-section](#user-content-locations-in-detail-memory-in-detail-memory-lookup-types) for more details.  Such a struct is barred from
-appearing in calldata, however.
+Note that it is legal to include a `mapping` type, or a (possibly
+multidimensional) array of mappings, as an element of a `struct` type; prior to
+Solidity 0.7.0, this did *not* preclude the `struct` type from being used in
+memory (even though, as per the following section, mappings cannot appear in
+memory), but rather, the mapping (or array) would be simply omitted in memory.
+See the [memory
+section](#user-content-locations-in-detail-memory-in-detail-memory-lookup-types)
+for more details.  Such a struct has always been barred from appearing in
+calldata, however.
 
 Also note that circular struct types are allowed, so long as the circularity is
 mediated by a lookup type.  That is to say, if a struct type `T0` has a element
@@ -523,8 +551,8 @@ it's illegal to delete them.
 | Pointer to storage                                   | Absolute                     | Words          | No                          | `0` (may be garbage, don't use!)                               |
 | Pointer to memory                                    | Absolute                     | Bytes          | No                          | `0x60` for lookup types; no fixed default for multivalue types |
 | Pointer to calldata from calldata                    | Relative (in an unusual way) | Bytes          | No                          | N/A                                                            |
-| Pointer to calldata multivalue type from the stack   | Absolute                     | Bytes          | No                          | N/A                                                            |
-| Pointer to calldata lookup type from the stack       | Absolute (with an offset)    | Bytes          | Yes                         | N/A                                                            |
+| Pointer to calldata multivalue type from the stack   | Absolute                     | Bytes          | No                          | Equal to the length of calldata                                |
+| Pointer to calldata lookup type from the stack       | Absolute (with an offset)    | Bytes          | Yes                         | Equal to the length of calldata; length word equal to zero     |
 
 
 <a name="user-content-locations-in-detail"></a>
@@ -534,8 +562,12 @@ it's illegal to delete them.
 * [The stack in detail](#user-content-locations-in-detail-the-stack-in-detail)
     * [The stack: Direct types and pointer types](#user-content-locations-in-detail-the-stack-in-detail-the-stack-direct-types-and-pointer-types)
     * [The stack: Data layout](#user-content-locations-in-detail-the-stack-in-detail-the-stack-data-layout)
+* [Code in detail](#user-content-locations-in-detail-code-in-detail)
+    * [Code: direct types](#user-content-locations-in-detail-code-in-detail-code-direct-types)
+    * [Code: data layout](#user-content-locations-in-detail-code-in-detail-code-data-layout)
 * [Memory in detail](#user-content-locations-in-detail-memory-in-detail)
     * [Memory: Direct types and pointer types](#user-content-locations-in-detail-memory-in-detail-memory-direct-types-and-pointer-types)
+    * [Layout of immutables in memory](#user-content-locations-in-detail-memory-in-detail-layout-of-immutables-in-memory)
     * [Memory: Multivalue types](#user-content-locations-in-detail-memory-in-detail-memory-multivalue-types)
     * [Memory: Lookup types](#user-content-locations-in-detail-memory-in-detail-memory-lookup-types)
     * [Pointers to memory](#user-content-locations-in-detail-memory-in-detail-pointers-to-memory)
@@ -594,10 +626,10 @@ The stack is of course not used only for storing local variables, but also as a
 working space.  And of course it also holds return addresses.  The stack is
 divided into stackframes; each stackframe begins with the return address.
 (There is no frame pointer, for those used to such a thing; just a return
-address.)  The exceptions are constructors and fallback functions, which do not
+address.)  The exceptions are constructors and fallback/receive functions, which do not
 include a return address.  In addition, if the initial function call (i.e.
 stackframe) of the EVM stackframe (i.e. message call or creation call) is not a
-constructor or fallback function, the function selector will be stored on the
+constructor or fallback/receive function, the function selector will be stored on the
 stack below the first stackframe.  (Additionally, in Solidity 0.4.20 and later,
 an extra zero word will appear below that on the stack if you're within a library
 call.)
@@ -624,6 +656,9 @@ exits.  It's necessary here to specify the order they go onto the stack.  First
 come the input parameters, in the order they were given, followed by the output
 parameters, in the order they were given.  Anonymous output parameters are
 treated the same as named output parameters for these purposes.
+
+*Remark*: Yul functions work slightly differently here, in that output parameters
+are pushed onto the stack in the *reverse* of the order they were given.
 
 Ordinary local variables, as declared in a function or modifier, are pushed
 onto the stack at their declaration and are popped when their containing block
@@ -654,13 +689,53 @@ execute in order from most base to most derived (again, note that the order
 they're listed on the constructor declaration has no effect); when a
 constructor exits, its parameters are popped from the stack.
 
+Paramters to a modifier on a fallback or receive function work like parameters
+to a modifier on any other function.  Note that parameters to a modifier on a
+constructor only go onto the stack when that particular constructor is about to
+run (i.e., all base constructors that run before it have exited).
+
+<a name="user-content-locations-in-detail-code-in-detail"></a>
+### Code in detail
+<sup>[ [&and;](#user-content-locations-in-detail) _Back to Locations in Detail_ ]</sup>
+
+Once a contract has been deployed, its immutable state variables are stored in its code.
+
+<a name="user-content-locations-in-detail-code-in-detail-code-direct-types"></a>
+#### Code: direct types
+
+Only direct types may go in code as immutables.  In addition, `function external`
+variables are currently barred from being used as immutables.
+
+Note that while code is a padded location, its padding works slightly unusually.
+In code, all types are zero-padded, even if ordinarily they would be sign-padded.
+Note that this does not alter whether they are padded on the right or on the left;
+that is still as normal.
+
+<a name="user-content-locations-in-detail-code-in-detail-code-data-layout"></a>
+#### Code: data layout
+
+Where in the code immutables may be found is basically unpredictable in
+advance.  However, you may use the Solidity compiler's `immutableReferences`
+output to determine this information.  Note that immutables that are never
+actually read from will not appear here -- as they won't actually appear
+anywhere in the code, either!  Immutables are simply inlined into the code
+wherever they're read from, so if they're never read from, their value isn't
+actually stored anywhere.
+
+Note that code has no notion of "slots"; the variables are simply placed wherever
+the compiler places them, among the code.
+
 <a name="user-content-locations-in-detail-memory-in-detail"></a>
 ### Memory in detail
 <sup>[ [&and;](#user-content-locations-in-detail) _Back to Locations in Detail_ ]</sup>
 
-We won't discuss layout in memory since, as mentioned, we only access it via
-pointers.  We'll break this down into sections depending on what type of
-variable we're looking at.
+Memory is used in two different ways.  Its ordinary use is to hold variables
+declared as living in memory.  Its secondary use, however, is to hold
+immutables during contract construction.
+
+We won't discuss layout in memory in the first context, since, as mentioned, we
+only access it via pointers.  However, we will discuss layout in memory for the
+case of immutables in memory.
 
 *Remark*: Although memory objects ordinarily start on a word, there is a bug in
 versions 0.5.3, 0.5.5, and 0.5.6 of Solidity specifically that can occasionally cause them to
@@ -677,6 +752,39 @@ Memory is a [padded location](#user-content-types-overview-overview-of-the-types
 direct types are padded as [described in their table](#user-content-types-overview-overview-of-the-types-direct-types-table-of-direct-types).
 Pointers, as mentioned above, always take up a full word.
 
+Note that immutables stored in memory have unusual padding; they are always
+zero-padded on the right, regardless of their usual padding.  Again, note that
+this only applies to immutables stored directly in memory during contract
+construct, and not to direct types appearing as elements of another type in
+memory in memory's normal use.
+
+<a name="user-content-locations-in-detail-memory-in-detail-layout-of-immutables-in-memory"></a>
+#### Layout of immutables in memory
+
+Immutable state variables are stored in memory during contract construction.
+(Or at least, for most of it; towards the end of contract construction memory
+will be overwritten by the code of the contract being constructed.)
+
+Immutable state variables are stored one after the other starting at memory
+address `0x80` (skipping the first four words of memory as Solidity reserves
+these for internal purposes).  Memory being a padded location, each takes up
+one word (although note that as per the [previous
+subsection](#user-content-locations-in-detail-memory-in-detail-memory-direct-types-and-pointer-types)
+the padding on immutables is unusual).  This just leaves the question of the
+order that they are stored in.
+
+For the simple case of a contract without inheritance, the immutable state
+variables are stored in the order that they are declared.  In the case of
+inheritance, the variables of the base class go before those of the derived
+class.  In cases of multiple inheritance, Solidity uses the [C3
+linearization](https://en.wikipedia.org/wiki/C3_linearization) to order classes
+from "most base" to "most derived", and then, as mentioned above, lays out
+variables starting with the most base and ending with the most derived.
+(Remember that, when listing parent classes, Solidity considers parents listed
+*first* to be "more base"; as the [Solidity docs
+note](https://solidity.readthedocs.io/en/v0.7.1/contracts.html#multiple-inheritance-and-linearization),
+this is the reverse order from, say, Python.)
+
 <a name="user-content-locations-in-detail-memory-in-detail-memory-multivalue-types"></a>
 #### Memory: Multivalue types
 
@@ -685,13 +793,14 @@ representation of its elements; with the exceptions that elements of reference
 type (both multivalue and lookup types), other than mappings, are [represented
 as
 pointers](#user-content-locations-in-detail-memory-in-detail-pointers-to-memory).
-(Also, prior to Solidity 0.5.0, elements of `mapping` type were allowed in
-memory structs and were simply omitted, as mappings cannot appear in memory.)
-As such, each (non-mapping) element takes up exactly one word (because direct
-types are padded and all reference types are stored as pointers).  Elements of
+(Also, prior to Solidity 0.7.0, elements of `mapping` type, as well as
+(possibly multidimensional) arrays of such, were allowed in memory structs and
+were simply omitted, as mappings cannot appear in memory.) As such, each
+element (that isn't omitted) takes up exactly one word (because direct types
+are padded and all reference types are stored as pointers).  Elements of
 structs go in the order they're specified in.
 
-(Note that prior to Solidity 0.6.0 it was possible to have in memory a struct
+(Note that prior to Solidity 0.7.0 it was possible to have in memory a struct
 that contains *only* mappings, and prior to 0.5.0, it was possible to have a
 struct that was empty entirely, or a statically-sized array of length 0.  Such
 a struct or array doesn't really have a representation in memory, since in
@@ -798,8 +907,8 @@ inline; so unlike in memory, elements may take up multiple words.  Elements of
 dynamic type are still stored as pointers (but see the [section
 below](#user-content-locations-in-detail-calldata-in-detail-pointers-to-calldata) about how those work).
 
-Also, structs that contain mappings are entirely illegal in calldata, unlike
-in memory where the mappings are simply omitted.
+Also, structs that contain mappings (or arrays of such) are entirely illegal in
+calldata, unlike in memory where the mappings are simply omitted.
 
 *Remark*: Calldata variables were only introduced in Solidity 0.5.0, so it is
 impossible to have variables of zero-element multivalue type in calldata;
@@ -816,20 +925,19 @@ reference type.  It is a `bytes calldata`.  But it's not represented like other
 variables of type `bytes calldata`, is it?  It's not some location in calldata
 with the number of bytes followed by the string of bytes; it simply *is* all of
 calldata.  Accesses to it are simply accesses to the string of bytes that is
-calldata.  (This might raise some problems if it were possible to assign to a
-variable holding a pointer to calldata, but it isn't.)
+calldata.
 
 This raises the question: Given that calldata is of variable length, where is
 the length of `msg.data` stored?  The answer, of course, is that this length is
 what is returned by the `CALLDATASIZE` instruction.  This instruction could be
 considered something of a special location, and indeed many of the Solidity
 language's special [globally available
-variables](https://solidity.readthedocs.io/en/v0.5.2/units-and-global-variables.html)
+variables](https://solidity.readthedocs.io/en/v0.7.1/units-and-global-variables.html)
 are "stored" in such special locations, each with their own EVM opcode.
 
 We have thus far ignored these special locations here and how they are encoded.
 However, since [the variables kept in these other special
-locations](https://solidity.readthedocs.io/en/v0.5.2/units-and-global-variables.html#block-and-transaction-properties)
+locations](https://solidity.readthedocs.io/en/v0.7.1/units-and-global-variables.html#block-and-transaction-properties)
 are all of type `uint256` or `address payable`; these special locations are
 word-based rather than byte-based (to the extent that distinction is meaningful
 here); and values from these special locations will always be copied to the
@@ -912,9 +1020,15 @@ data layout in storage.
 <a name="user-content-locations-in-detail-storage-in-detail-storage-data-layout"></a>
 #### Storage: Data layout
 
+Storage is used to hold all state variables that are not declared `constant` or
+`immutable`.  In what follows, we ignore `constant` and `immutable` variables,
+and look just at the ordinary state variables.  (Variables declared `constant`
+are optimized out by the compiler; variables declared `immutable` are stored in
+[code](#user-content-locations-in-detail-code-in-detail-code-data-layout) or [memory](#user-content-locations-in-detail-memory-in-detail-layout-of-immutables-in-memory) instead.)
+
 First, we consider the case of a contract that does not inherit from any others.
 
-In this case, Variables in storage are always laid out in the order that they were declared,
+In this case, state variables in storage are always laid out in the order that they were declared,
 starting from the beginning of storage.  However, within a word, variables are
 laid out from *right to left*, not left to right (with one sort-of-exception to
 be [described later](#user-content-locations-in-detail-storage-in-detail-storage-lookup-types)).  Variables of direct type may not
@@ -933,8 +1047,7 @@ information.
 Variables of multivalue type must start on a word boundary, and always occupy
 whole words (i.e. the next variable after must start on a word boundary).
 
-Variables declared `constant` are skipped; these variables are optimized out by
-the compiler.
+As mentioned above, variables declared `constant` or `immutable` are skipped.
 
 Subject to the above restrictions, every variable is placed as early as
 possible.
@@ -953,7 +1066,7 @@ from "most base" to "most derived", and then, as mentioned above, lays out
 variables starting with the most base and ending with the most derived.
 (Remember that, when listing parent classes, Solidity considers parents listed
 *first* to be "more base"; as the [Solidity docs
-note](https://solidity.readthedocs.io/en/v0.5.2/contracts.html#multiple-inheritance-and-linearization),
+note](https://solidity.readthedocs.io/en/v0.7.1/contracts.html#multiple-inheritance-and-linearization),
 this is the reverse order from, say, Python.)
 
 <a name="user-content-locations-in-detail-storage-in-detail-storage-direct-types"></a>
