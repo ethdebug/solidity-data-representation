@@ -123,10 +123,11 @@ representation of its elements; with the exceptions that elements of reference
 type (both multivalue and lookup types), other than mappings, are [represented
 as
 pointers](#user-content-locations-in-detail-memory-in-detail-pointers-to-memory).
-(Also, prior to Solidity 0.5.0, elements of `mapping` type were allowed in
-memory structs and were simply omitted, as mappings cannot appear in memory.)
-As such, each (non-mapping) element takes up exactly one word (because direct
-types are padded and all reference types are stored as pointers).  Elements of
+(Also, prior to Solidity 0.7.0, elements of `mapping` type, as well as
+(possibly multidimensional) arrays of such, were allowed in memory structs and
+were simply omitted, as mappings cannot appear in memory.) As such, each
+element (that isn't omitted) takes up exactly one word (because direct types
+are padded and all reference types are stored as pointers).  Elements of
 structs go in the order they're specified in.
 
 (Note that prior to Solidity 0.7.0 it was possible to have in memory a struct
@@ -230,8 +231,8 @@ inline; so unlike in memory, elements may take up multiple words.  Elements of
 dynamic type are still stored as pointers (but see the [section
 below](#user-content-locations-in-detail-calldata-in-detail-pointers-to-calldata) about how those work).
 
-Also, structs that contain mappings are entirely illegal in calldata, unlike
-in memory where the mappings are simply omitted.
+Also, structs that contain mappings (or arrays of such) are entirely illegal in
+calldata, unlike in memory where the mappings are simply omitted.
 
 *Remark*: Calldata variables were only introduced in Solidity 0.5.0, so it is
 impossible to have variables of zero-element multivalue type in calldata;
