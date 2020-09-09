@@ -35,10 +35,10 @@ The stack is of course not used only for storing local variables, but also as a
 working space.  And of course it also holds return addresses.  The stack is
 divided into stackframes; each stackframe begins with the return address.
 (There is no frame pointer, for those used to such a thing; just a return
-address.)  The exceptions are constructors and fallback functions, which do not
+address.)  The exceptions are constructors and fallback/receive functions, which do not
 include a return address.  In addition, if the initial function call (i.e.
 stackframe) of the EVM stackframe (i.e. message call or creation call) is not a
-constructor or fallback function, the function selector will be stored on the
+constructor or fallback/receive function, the function selector will be stored on the
 stack below the first stackframe.  (Additionally, in Solidity 0.4.20 and later,
 an extra zero word will appear below that on the stack if you're within a library
 call.)
@@ -65,6 +65,9 @@ exits.  It's necessary here to specify the order they go onto the stack.  First
 come the input parameters, in the order they were given, followed by the output
 parameters, in the order they were given.  Anonymous output parameters are
 treated the same as named output parameters for these purposes.
+
+*Remark*: Yul functions work slightly differently here, in that output parameters
+are pushed onto the stack in the *reverse* of the order they were given.
 
 Ordinary local variables, as declared in a function or modifier, are pushed
 onto the stack at their declaration and are popped when their containing block
@@ -94,6 +97,11 @@ parameters are pushed on in order from left to right.  Constructors then
 execute in order from most base to most derived (again, note that the order
 they're listed on the constructor declaration has no effect); when a
 constructor exits, its parameters are popped from the stack.
+
+Paramters to a modifier on a fallback or receive function work like parameters
+to a modifier on any other function.  Note that parameters to a modifier on a
+constructor only go onto the stack when that particular constructor is about to
+run (i.e., all base constructors that run before it have exited).
 
 ### Memory in detail
 {"gitdown": "scroll-up", "upRef": "#user-content-locations-in-detail", "upTitle": "Back to Locations in Detail"}
