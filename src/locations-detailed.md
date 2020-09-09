@@ -35,10 +35,10 @@ The stack is of course not used only for storing local variables, but also as a
 working space.  And of course it also holds return addresses.  The stack is
 divided into stackframes; each stackframe begins with the return address.
 (There is no frame pointer, for those used to such a thing; just a return
-address.)  The exceptions are constructors and fallback functions, which do not
+address.)  The exceptions are constructors and fallback/receive functions, which do not
 include a return address.  In addition, if the initial function call (i.e.
 stackframe) of the EVM stackframe (i.e. message call or creation call) is not a
-constructor or fallback function, the function selector will be stored on the
+constructor or fallback/receive function, the function selector will be stored on the
 stack below the first stackframe.  (Additionally, in Solidity 0.4.20 and later,
 an extra zero word will appear below that on the stack if you're within a library
 call.)
@@ -65,6 +65,9 @@ exits.  It's necessary here to specify the order they go onto the stack.  First
 come the input parameters, in the order they were given, followed by the output
 parameters, in the order they were given.  Anonymous output parameters are
 treated the same as named output parameters for these purposes.
+
+*Remark*: Yul functions work slightly differently here, in that output parameters
+are pushed onto the stack in the *reverse* of the order they were given.
 
 Ordinary local variables, as declared in a function or modifier, are pushed
 onto the stack at their declaration and are popped when their containing block
@@ -95,12 +98,49 @@ execute in order from most base to most derived (again, note that the order
 they're listed on the constructor declaration has no effect); when a
 constructor exits, its parameters are popped from the stack.
 
+Paramters to a modifier on a fallback or receive function work like parameters
+to a modifier on any other function.  Note that parameters to a modifier on a
+constructor only go onto the stack when that particular constructor is about to
+run (i.e., all base constructors that run before it have exited).
+
+### Code in detail
+{"gitdown": "scroll-up", "upRef": "#user-content-locations-in-detail", "upTitle": "Back to Locations in Detail"}
+
+Once a contract has been deployed, its immutable state variables are stored in its code.
+
+#### Code: direct types
+
+Only direct types may go in code as immutables.  In addition, `function external`
+variables are currently barred from being used as immutables.
+
+Note that while code is a padded location, its padding works slightly unusually.
+In code, all types are zero-padded, even if ordinarily they would be sign-padded.
+Note that this does not alter whether they are padded on the right or on the left;
+that is still as normal.
+
+#### Code: data layout
+
+Where in the code immutables may be found is basically unpredictable in
+advance.  However, you may use the Solidity compiler's `immutableReferences`
+output to determine this information.  Note that immutables that are never
+actually read from will not appear here -- as they won't actually appear
+anywhere in the code, either!  Immutables are simply inlined into the code
+wherever they're read from, so if they're never read from, their value isn't
+actually stored anywhere.
+
+Note that code has no notion of "slots"; the variables are simply placed wherever
+the compiler places them, among the code.
+
 ### Memory in detail
 {"gitdown": "scroll-up", "upRef": "#user-content-locations-in-detail", "upTitle": "Back to Locations in Detail"}
 
-We won't discuss layout in memory since, as mentioned, we only access it via
-pointers.  We'll break this down into sections depending on what type of
-variable we're looking at.
+Memory is used in two different ways.  Its ordinary use is to hold variables
+declared as living in memory.  Its secondary use, however, is to hold
+immutables during contract construction.
+
+We won't discuss layout in memory in the first context, since, as mentioned, we
+only access it via pointers.  However, we will discuss layout in memory for the
+case of immutables in memory.
 
 *Remark*: Although memory objects ordinarily start on a word, there is a bug in
 versions 0.5.3, 0.5.5, and 0.5.6 of Solidity specifically that can occasionally cause them to
@@ -116,6 +156,38 @@ Memory is a [padded location](#user-content-types-overview-overview-of-the-types
 direct types are padded as [described in their table](#user-content-types-overview-overview-of-the-types-direct-types-table-of-direct-types).
 Pointers, as mentioned above, always take up a full word.
 
+Note that immutables stored in memory have unusual padding; they are always
+zero-padded on the right, regardless of their usual padding.  Again, note that
+this only applies to immutables stored directly in memory during contract
+construct, and not to direct types appearing as elements of another type in
+memory in memory's normal use.
+
+#### Layout of immutables in memory
+
+Immutable state variables are stored in memory during contract construction.
+(Or at least, for most of it; towards the end of contract construction memory
+will be overwritten by the code of the contract being constructed.)
+
+Immutable state variables are stored one after the other starting at memory
+address `0x80` (skipping the first four words of memory as Solidity reserves
+these for internal purposes).  Memory being a padded location, each takes up
+one word (although note that as per the [previous
+subsection](#user-content-locations-in-detail-memory-in-detail-memory-direct-types-and-pointer-types)
+the padding on immutables is unusual).  This just leaves the question of the
+order that they are stored in.
+
+For the simple case of a contract without inheritance, the immutable state
+variables are stored in the order that they are declared.  In the case of
+inheritance, the variables of the base class go before those of the derived
+class.  In cases of multiple inheritance, Solidity uses the [C3
+linearization](https://en.wikipedia.org/wiki/C3_linearization) to order classes
+from "most base" to "most derived", and then, as mentioned above, lays out
+variables starting with the most base and ending with the most derived.
+(Remember that, when listing parent classes, Solidity considers parents listed
+*first* to be "more base"; as the [Solidity docs
+note](https://solidity.readthedocs.io/en/v0.7.1/contracts.html#multiple-inheritance-and-linearization),
+this is the reverse order from, say, Python.)
+
 #### Memory: Multivalue types
 
 A multivalue type in memory is simply represented by concatenating together the
@@ -123,13 +195,14 @@ representation of its elements; with the exceptions that elements of reference
 type (both multivalue and lookup types), other than mappings, are [represented
 as
 pointers](#user-content-locations-in-detail-memory-in-detail-pointers-to-memory).
-(Also, prior to Solidity 0.5.0, elements of `mapping` type were allowed in
-memory structs and were simply omitted, as mappings cannot appear in memory.)
-As such, each (non-mapping) element takes up exactly one word (because direct
-types are padded and all reference types are stored as pointers).  Elements of
+(Also, prior to Solidity 0.7.0, elements of `mapping` type, as well as
+(possibly multidimensional) arrays of such, were allowed in memory structs and
+were simply omitted, as mappings cannot appear in memory.) As such, each
+element (that isn't omitted) takes up exactly one word (because direct types
+are padded and all reference types are stored as pointers).  Elements of
 structs go in the order they're specified in.
 
-(Note that prior to Solidity 0.6.0 it was possible to have in memory a struct
+(Note that prior to Solidity 0.7.0 it was possible to have in memory a struct
 that contains *only* mappings, and prior to 0.5.0, it was possible to have a
 struct that was empty entirely, or a statically-sized array of length 0.  Such
 a struct or array doesn't really have a representation in memory, since in
@@ -230,8 +303,8 @@ inline; so unlike in memory, elements may take up multiple words.  Elements of
 dynamic type are still stored as pointers (but see the [section
 below](#user-content-locations-in-detail-calldata-in-detail-pointers-to-calldata) about how those work).
 
-Also, structs that contain mappings are entirely illegal in calldata, unlike
-in memory where the mappings are simply omitted.
+Also, structs that contain mappings (or arrays of such) are entirely illegal in
+calldata, unlike in memory where the mappings are simply omitted.
 
 *Remark*: Calldata variables were only introduced in Solidity 0.5.0, so it is
 impossible to have variables of zero-element multivalue type in calldata;
@@ -247,20 +320,19 @@ reference type.  It is a `bytes calldata`.  But it's not represented like other
 variables of type `bytes calldata`, is it?  It's not some location in calldata
 with the number of bytes followed by the string of bytes; it simply *is* all of
 calldata.  Accesses to it are simply accesses to the string of bytes that is
-calldata.  (This might raise some problems if it were possible to assign to a
-variable holding a pointer to calldata, but it isn't.)
+calldata.
 
 This raises the question: Given that calldata is of variable length, where is
 the length of `msg.data` stored?  The answer, of course, is that this length is
 what is returned by the `CALLDATASIZE` instruction.  This instruction could be
 considered something of a special location, and indeed many of the Solidity
 language's special [globally available
-variables](https://solidity.readthedocs.io/en/v0.5.2/units-and-global-variables.html)
+variables](https://solidity.readthedocs.io/en/v0.7.1/units-and-global-variables.html)
 are "stored" in such special locations, each with their own EVM opcode.
 
 We have thus far ignored these special locations here and how they are encoded.
 However, since [the variables kept in these other special
-locations](https://solidity.readthedocs.io/en/v0.5.2/units-and-global-variables.html#block-and-transaction-properties)
+locations](https://solidity.readthedocs.io/en/v0.7.1/units-and-global-variables.html#block-and-transaction-properties)
 are all of type `uint256` or `address payable`; these special locations are
 word-based rather than byte-based (to the extent that distinction is meaningful
 here); and values from these special locations will always be copied to the
@@ -338,9 +410,15 @@ data layout in storage.
 
 #### Storage: Data layout
 
+Storage is used to hold all state variables that are not declared `constant` or
+`immutable`.  In what follows, we ignore `constant` and `immutable` variables,
+and look just at the ordinary state variables.  (Variables declared `constant`
+are optimized out by the compiler; variables declared `immutable` are stored in
+[code](#user-content-locations-in-detail-code-in-detail-code-data-layout) or [memory](#user-content-locations-in-detail-memory-in-detail-layout-of-immutables-in-memory) instead.)
+
 First, we consider the case of a contract that does not inherit from any others.
 
-In this case, Variables in storage are always laid out in the order that they were declared,
+In this case, state variables in storage are always laid out in the order that they were declared,
 starting from the beginning of storage.  However, within a word, variables are
 laid out from *right to left*, not left to right (with one sort-of-exception to
 be [described later](#user-content-locations-in-detail-storage-in-detail-storage-lookup-types)).  Variables of direct type may not
@@ -359,8 +437,7 @@ information.
 Variables of multivalue type must start on a word boundary, and always occupy
 whole words (i.e. the next variable after must start on a word boundary).
 
-Variables declared `constant` are skipped; these variables are optimized out by
-the compiler.
+As mentioned above, variables declared `constant` or `immutable` are skipped.
 
 Subject to the above restrictions, every variable is placed as early as
 possible.
@@ -379,7 +456,7 @@ from "most base" to "most derived", and then, as mentioned above, lays out
 variables starting with the most base and ending with the most derived.
 (Remember that, when listing parent classes, Solidity considers parents listed
 *first* to be "more base"; as the [Solidity docs
-note](https://solidity.readthedocs.io/en/v0.5.2/contracts.html#multiple-inheritance-and-linearization),
+note](https://solidity.readthedocs.io/en/v0.7.1/contracts.html#multiple-inheritance-and-linearization),
 this is the reverse order from, say, Python.)
 
 #### Storage: Direct types
