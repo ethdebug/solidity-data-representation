@@ -26,9 +26,9 @@ is not entirely predictable but may be determined by other
 systems of the debugger, we may rely on that.  See the
 [Solidity documentation](https://solidity.readthedocs.io/) for things not
 covered here, particularly the
-[section on types](https://solidity.readthedocs.io/en/v0.5.2/solidity-in-depth.html),
-the [ABI specification](https://solidity.readthedocs.io/en/v0.5.2/abi-spec.html),
-and the [miscellaneous section](https://solidity.readthedocs.io/en/v0.5.2/miscellaneous.html);
+[section on types](https://solidity.readthedocs.io/en/v0.7.1/solidity-in-depth.html),
+the [ABI specification](https://solidity.readthedocs.io/en/v0.7.1/abi-spec.html),
+and the [miscellaneous section](https://solidity.readthedocs.io/en/v0.7.1/miscellaneous.html);
 and perhaps also see the [Ethereum yellow paper](https://ethereum.github.io/yellowpaper/paper.pdf).
 
 This document is also primarily only concerned with variables that a user might
@@ -45,5 +45,5 @@ original value in calldata will always be copied onto the stack before use).
 Obviously the value still exists in calldata, but since no variable points
 there, it's not our concern.
 
-_**Note**: This document pertains to **Solidity v0.6.3**, current as of this
+_**Note**: This document pertains to **Solidity v0.7.1**, current as of this
 writing._

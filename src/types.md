@@ -65,6 +65,10 @@ Some types are not allowed in calldata, especially if `ABIEncoderV2` is not
 being used; but we will assume it is.  Note, though, that circular types are never
 allowed in calldata.
 
+Only direct types may go in code as immutables; moreover, variables of type
+`function external` cannot presently go in code this way.  (Nor can they go
+in memory as immutables, when memory is being used to store immutables.)
+
 In addition, the locations memory and calldata may not hold mappings, which may
 go only in storage.  (However, structs that *contain* mappings, or that contain
 (possibly multidimensional) arrays of mappings, were allowed in memory prior to
@@ -97,13 +101,15 @@ mentioned above):
 |----------|----------------------------------------------------|--------------------------------------|-------------------------|-----------------------------------------------|-----------------------------------------------|
 | Stack    | Yes                                                | No (only as pointers)                | No (only as pointers)   | N/A                                           | To storage, memory, or calldata               |
 | Storage  | Yes                                                | Yes                                  | Yes                     | Legal                                         | No                                            |
-| Memory   | Only as elements of other types                    | Yes                                  | Yes, excluding mappings | Illegal (omitted prior to 0.7.0)              | To memory (only as elements of other types)   |
+| Memory   | Only as elements of other types or as immutables   | Yes                                  | Yes, excluding mappings | Illegal (omitted prior to 0.7.0)              | To memory (only as elements of other types)   |
 | Calldata | Only as elements of other types, with restrictions | Yes, excluding circular struct types | Yes, excluding mappings | Illegal                                       | To calldata (only as elements of other types) |
+| Code     | Yes, with restrictions                             | No                                   | No                      | N/A                                           | No                                            |
 
 Note that with the exception of the special case of mappings (or possibly
 multidimensional arrays of such) in structs, it is otherwise true that if the
 type of some element of some given type is illegal in that location, then so is
-the type as a whole.
+the type as a whole.  Also, immutables in memory have the same restrictions that
+they do in code.
 
 ### Overview of the types: Direct types
 {"gitdown": "scroll-up", "upRef": "#user-content-types-overview", "upTitle": "Back to Types Overview"}
@@ -115,17 +121,22 @@ of direct type may share a storage slot, within which each variable only takes
 up as much space as it need to; see the table below for information on sizes.
 (Note that variables of direct type may not cross word boundaries.)
 
-The stack, memory, and calldata, however, are padded locations -- each variable
-of direct type always takes up a full slot.  (There are two exceptions to this
--- the individual `byte`s in a `bytes` or `string` are packed rather than
-padded; and external functions take up *two* slots on the stack.  Both these
-will be described in more detail later ([1](#user-content-locations-in-detail-memory-in-detail-memory-lookup-types),
-[2](#user-content-locations-in-detail-the-stack-in-detail)).)  The exact method of padding varies by type,
-as detailed in [the table below](#user-content-types-overview-overview-of-the-types-direct-types-table-of-direct-types).
+The stack, memory, calldata, and code, however, are padded locations -- each
+variable of direct type always takes up a full slot.  (There are two exceptions
+to this -- the individual `byte`s in a `bytes` or `string` are packed rather
+than padded; and external functions take up *two* slots on the stack.  Both
+these will be described in more detail later
+([1](#user-content-locations-in-detail-memory-in-detail-memory-lookup-types),
+[2](#user-content-locations-in-detail-the-stack-in-detail)).)  The exact method
+of padding varies by type, as detailed in [the table
+below](#user-content-types-overview-overview-of-the-types-direct-types-table-of-direct-types).
+Note that immutables have slightly unusual padding, whether stored in code or
+memory, as will be detailed later ([1](#user-content-locations-in-detail-code-in-detail-code-direct-types), [2](#user-content-locations-in-detail-memory-in-detail-memory-direct-types-and-pointer-types)).
 
 (Again, note that for calldata we are using a somewhat unusual notion of slot;
-[see the calldata section](#user-content-locations-in-detail-calldata-in-detail-slots-in-calldata-and-the-offset) for more
-information.)
+[see the calldata
+section](#user-content-locations-in-detail-calldata-in-detail-slots-in-calldata-and-the-offset)
+for more information.)
 
 #### Table of direct types
 
@@ -134,42 +145,48 @@ properties.  Some of this information may not yet make sense if you have only
 read up to this point.  See the [next section](#user-content-types-overview-overview-of-the-types-direct-types-representations-of-direct-types)
 for more detail on how these types are actually represented.
 
-| Type                | Size in storage (bytes)                     | Padding in padded locations             | Default value                             | Is value type? | Is elementary type? | Allowed in calldata? |
-|---------------------|---------------------------------------------|-----------------------------------------|-------------------------------------------|----------------|---------------------|----------------------|
-| `bool`              | 1                                           | Zero-padded, left                       | `false`                                   | Yes            | Yes                 | Yes                  |
-| `uintN`             | N/8                                         | Zero-padded, left\*                     | 0                                         | Yes            | Yes                 | Yes                  |
-| `intN`              | N/8                                         | Sign-padded, left\*                     | 0                                         | Yes            | Yes                 | Yes                  |
-| `address [payable]` | 20                                          | Zero-padded, left\*                     | Zero address (not valid!)                 | Yes            | Yes                 | Yes                  |
-| `contract` types    | 20                                          | Zero-padded, left\*                     | Zero address (not valid!)                 | No             | Yes                 | Yes                  |
-| `bytesN`            | N                                           | Zero-padded, right\*                    | All zeroes                                | Yes            | Yes                 | Yes                  |
-| `enum` types        | As many as needed to hold all possibilities | Zero-padded, left                       | Whichever possibility is represented by 0 | Yes            | Yes                 | Yes                  |
-| `function internal` | 8                                           | Zero-padded, left                       | Depends on location, but always invalid   | No             | No                  | No                   |
-| `function external` | 24                                          | Zero-padded, right, except on the stack | Zero address, zero selector (not valid!)  | No             | No                  | Yes                  |
-| `ufixedMxN`         | M/8                                         | Zero-padded, left\*                     | 0                                         | Yes            | Yes                 | Yes                  |
-| `fixedMxN`          | M/8                                         | Sign-padded, left\*                     | 0                                         | Yes            | Yes                 | Yes                  |
+| Type                | Size in storage (bytes)                     | Padding in most padded locations        | Default value                             | Is value type? | Is elementary? | Allowed in calldata? | Allowed as immutable?|
+|---------------------|---------------------------------------------|-----------------------------------------|-------------------------------------------|----------------|----------------|----------------------|----------------------|
+| `bool`              | 1                                           | Zero-padded, left                       | `false`                                   | Yes            | Yes            | Yes                  | Yes                  |
+| `uintN`             | N/8                                         | Zero-padded, left\*                     | 0                                         | Yes            | Yes            | Yes                  | Yes                  |
+| `intN`              | N/8                                         | Sign-padded, left\*                     | 0                                         | Yes            | Yes            | Yes                  | Yes                  |
+| `address [payable]` | 20                                          | Zero-padded, left\*                     | Zero address (not valid!)                 | Yes            | Yes            | Yes                  | Yes                  |
+| `contract` types    | 20                                          | Zero-padded, left\*                     | Zero address (not valid!)                 | No             | Yes            | Yes                  | Yes                  |
+| `bytesN`            | N                                           | Zero-padded, right\*                    | All zeroes                                | Yes            | Yes            | Yes                  | Yes                  |
+| `enum` types        | As many as needed to hold all possibilities | Zero-padded, left                       | Whichever possibility is represented by 0 | Yes            | Yes            | Yes                  | Yes                  |
+| `function internal` | 8                                           | Zero-padded, left                       | Depends on location, but always invalid   | No             | No             | No                   | Yes                  |
+| `function external` | 24                                          | Zero-padded, right, except on the stack | Zero address, zero selector (not valid!)  | No             | No             | Yes                  | No                   |
+| `ufixedMxN`         | M/8                                         | Zero-padded, left\*                     | 0                                         | Yes            | Yes            | Yes                  | Yes                  |
+| `fixedMxN`          | M/8                                         | Sign-padded, left\*                     | 0                                         | Yes            | Yes            | Yes                  | Yes                  |
 
 Some remarks:
 
 1. As the table states, external functions act a bit oddly on the stack; see the
    [section on the stack](#user-content-locations-in-detail-the-stack-in-detail-the-stack-direct-types-and-pointer-types)
    for details.
-2. Some types are marked with an asterisk regarding their padding.  These types
+2. Padding works a bit differently in code; in code, all types are zero-padded,
+   even if they would ordinarily be sign-padded.  This does not affect which side
+   they are padded on.
+3. Padding also works a bit differently for immutables stored in memory during contract
+   construction.  In this context, all types are zero-padded on the right,
+   regardless of their usual padding.
+4. Some types are marked with an asterisk regarding their padding.  These types
    may have incorrect padding while on the stack due to operations that overflow.
    Solidity will always restore the correct padding when it is necessary to do so;
    however, it will not do this *until* it is necessary to do so.  So, be aware
    that on the stack these types may be padded incorrectly.
-3. The `ufixedMxN` and `fixedMxN` types are not implemented yet.  Their listed
+5. The `ufixedMxN` and `fixedMxN` types are not implemented yet.  Their listed
    properies are largely inferred based on what we can expect.
-4. Some direct types have aliases; these have not been listed in the above table.
+6. Some direct types have aliases; these have not been listed in the above table.
    `uint` and `int` are aliases for `uint256` and `int256`; `ufixed` and `fixed`
    for `ufixed128x18` and `fixed128x18`; and `byte` for `bytes1`.
-5. Each direct type's default value is simply whatever value is represented by
+7. Each direct type's default value is simply whatever value is represented by
    a string of all zero bytes, with the one exception of internal functions in
    locations other than storage.  See [below](#user-content-types-overview-overview-of-the-types-direct-types-representations-of-direct-types) for more on this.
-6. The `N` in `uintN` and `intN` must be a multiple of 8, from 8 to 256.  The
+8. The `N` in `uintN` and `intN` must be a multiple of 8, from 8 to 256.  The
    `M` in `ufixedMxN` and `fixedMxN` must be a multiple of 8, from 8 to 256,
    while `N` must be from 0 to 80.  The `N` in `bytesN` must be from 1 to 32.
-7. Function types are, of course, more complex than just their division into
+9. Function types are, of course, more complex than just their division into
    `internal` and `external`; they also have input parameter types, output
    parameter types, and mutability modifiers (`pure`, `view`, `payable`).
    However, these will not concern us here, and we will ignore them.
@@ -367,4 +384,4 @@ it's illegal to delete them.
 | Pointer to memory                                    | Absolute                     | Bytes          | No                          | `0x60` for lookup types; no fixed default for multivalue types |
 | Pointer to calldata from calldata                    | Relative (in an unusual way) | Bytes          | No                          | N/A                                                            |
 | Pointer to calldata multivalue type from the stack   | Absolute                     | Bytes          | No                          | Equal to the length of calldata                                |
-| Pointer to calldata lookup type from the stack       | Absolute (with an offset)    | Bytes          | Yes                         | Equal to the length of calldata, length equal to zero          |
+| Pointer to calldata lookup type from the stack       | Absolute (with an offset)    | Bytes          | Yes                         | Equal to the length of calldata; length word equal to zero     |
