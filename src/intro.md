@@ -9,7 +9,7 @@ For writers of line debuggers and other debugging-related utilities.
 | -----------:|:------------ |
 | Published | 2018-12-26 - Boxing Day |
 | Last revised | 2020-09-08 |
-| Copyright | 2018-2019 Truffle Blockchain Group |
+| Copyright | 2018-2020 Truffle Blockchain Group |
 | License | <a rel="license" href="http://creativecommons.org/licenses/by/4.0/"><img alt="Creative Commons License" style="border-width:0" src="https://i.creativecommons.org/l/by/4.0/88x31.png" /></a> |
 | Document Source | [ethdebug/solidity-data-representation](https://github.com/ethdebug/solidity-data-representation) |
 
