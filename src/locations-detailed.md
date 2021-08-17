@@ -65,7 +65,9 @@ entered, and are not popped until the function, *including all modifiers*,
 exits.  It's necessary here to specify the order they go onto the stack.  First
 come the input parameters, in the order they were given, followed by the output
 parameters, in the order they were given.  Anonymous output parameters are
-treated the same as named output parameters for these purposes.
+treated the same as named output parameters for these purposes.  Similarly,
+parameters for fallback functions are not treated specially here, but work
+like any other parameters.
 
 *Remark*: Yul functions work slightly differently here, in that output parameters
 are pushed onto the stack in the *reverse* of the order they were given.
@@ -82,7 +84,8 @@ and are popped when that modifier exits.  Again, they go in the stack in the
 order they were given.  Note that (like other local variables declared in
 modifiers) these variables are still on the stack while the placeholder
 statement `_;` is running, even if they are inaccessible.  Remember that
-modifiers are run in order from left to right.
+modifiers are run in order from left to right, and that they may be applied
+to constructors, fallback functions, and receive functions.
 
 This leaves the case of parameters to base constructor invocations (whether on
 the constructor or on the contract).  When a constructor is called, not only
@@ -97,7 +100,9 @@ declaration matters here.  Within each base constructor's parameter region, the
 parameters are pushed on in order from left to right.  Constructors then
 execute in order from most base to most derived (again, note that the order
 they're listed on the constructor declaration has no effect); when a
-constructor exits, its parameters are popped from the stack.
+constructor exits, its parameters are popped from the stack.  Modifiers on a
+constructor or base constructor are handled when that constructor or base
+constructor runs.
 
 Paramters to a modifier on a fallback or receive function work like parameters
 to a modifier on any other function.  Note that parameters to a modifier on a
