@@ -24,11 +24,10 @@ debugger that does such.  As such, other information about the type system or
 data layout that aren't necessary for that may be skipped; and where location
 is not entirely predictable but may be determined by other
 systems of the debugger, we may rely on that.  See the
-[Solidity documentation](https://solidity.readthedocs.io/) for things not
+[Solidity documentation](https://docs.soliditylang.org/) for things not
 covered here, particularly the
-[section on types](https://solidity.readthedocs.io/en/v0.7.1/solidity-in-depth.html),
-the [ABI specification](https://solidity.readthedocs.io/en/v0.7.1/abi-spec.html),
-and the [miscellaneous section](https://solidity.readthedocs.io/en/v0.7.1/miscellaneous.html);
+[section on types](https://docs.soliditylang.org/en/v0.8.7/types.html)
+and the [ABI specification](https://docs.soliditylang.org/en/v0.8.7/types.html);
 and perhaps also see the [Ethereum yellow paper](https://ethereum.github.io/yellowpaper/paper.pdf).
 
 This document is also primarily only concerned with variables that a user might
