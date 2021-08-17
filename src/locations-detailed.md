@@ -38,10 +38,11 @@ divided into stackframes; each stackframe begins with the return address.
 address.)  The exceptions are constructors and fallback/receive functions, which do not
 include a return address.  In addition, if the initial function call (i.e.
 stackframe) of the EVM stackframe (i.e. message call or creation call) is not a
-constructor or fallback/receive function, the function selector will be stored on the
-stack below the first stackframe.  (Additionally, in Solidity 0.4.20 and later,
-an extra zero word will appear below that on the stack if you're within a library
-call.)
+constructor, and the contract has external functions other than the constructor,
+fallback, and receive functions, then
+the function selector will be stored on the stack below the first
+stackframe.  (Additionally, in Solidity 0.4.20 and later, an extra zero word
+will appear below that on the stack if you're within a library call.)
 
 Note that function modifiers and base constructor invocations (whether placed
 on the constructor or on the contract) do not create new stackframes; these are
