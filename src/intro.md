@@ -8,8 +8,8 @@ For writers of line debuggers and other debugging-related utilities.
 | Author | Harry Altman [@haltman-at] |
 | -----------:|:------------ |
 | Published | 2018-12-26 - Boxing Day |
-| Last revised | 2020-09-08 |
-| Copyright | 2018-2020 Truffle Blockchain Group |
+| Last revised | 2021-08-17 |
+| Copyright | 2018-2021 Truffle Blockchain Group |
 | License | <a rel="license" href="http://creativecommons.org/licenses/by/4.0/"><img alt="Creative Commons License" style="border-width:0" src="https://i.creativecommons.org/l/by/4.0/88x31.png" /></a> |
 | Document Source | [ethdebug/solidity-data-representation](https://github.com/ethdebug/solidity-data-representation) |
 
@@ -24,11 +24,10 @@ debugger that does such.  As such, other information about the type system or
 data layout that aren't necessary for that may be skipped; and where location
 is not entirely predictable but may be determined by other
 systems of the debugger, we may rely on that.  See the
-[Solidity documentation](https://solidity.readthedocs.io/) for things not
+[Solidity documentation](https://docs.soliditylang.org/) for things not
 covered here, particularly the
-[section on types](https://solidity.readthedocs.io/en/v0.7.1/solidity-in-depth.html),
-the [ABI specification](https://solidity.readthedocs.io/en/v0.7.1/abi-spec.html),
-and the [miscellaneous section](https://solidity.readthedocs.io/en/v0.7.1/miscellaneous.html);
+[section on types](https://docs.soliditylang.org/en/v0.8.7/types.html)
+and the [ABI specification](https://docs.soliditylang.org/en/v0.8.7/types.html);
 and perhaps also see the [Ethereum yellow paper](https://ethereum.github.io/yellowpaper/paper.pdf).
 
 This document is also primarily only concerned with variables that a user might
@@ -45,5 +44,5 @@ original value in calldata will always be copied onto the stack before use).
 Obviously the value still exists in calldata, but since no variable points
 there, it's not our concern.
 
-_**Note**: This document pertains to **Solidity v0.7.1**, current as of this
+_**Note**: This document pertains to **Solidity v0.8.7**, current as of this
 writing._

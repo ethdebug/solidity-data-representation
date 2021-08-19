@@ -219,12 +219,19 @@ deployed code.
 For internal functions, default values are also worth discussing, as in
 non-storage locations, they have a nonzero default value.  In contracts for
 which Solidity deems it necessary, there will be a special designated invalid
-function which throws an `assert`-style exception (i.e. it reverts the
-transaction and consumes all available gas).  This special function has the
-bytecode `0x5bfe` (a `JUMPDEST` followed by an `INVALID`), but, as mentioned,
-is only included if Solidity deems it necessary.  The default value for an
-internal function, outside of storage, is to point to this designated invalid
-function.  Otherwise these are encoded as above.
+function.  In Solidity 0.8.0 and later, this function throws a `Panic(0x51)`;
+in earlier versions of Solidity, it uses the `INVALID` opcode, reverting the
+transaction and consuming all available gas.  In Solidity 0.8.0 and later,
+this special function has the bytecode
+```
+0x5b7f000000000000000000000000000000000000000000000000000000004e487b71600052605160045260246000fd
+```
+and in earlier versions of Solidity,
+it has the bytecode `0x5bfe`.  As mentioned, it's only included if Solidity
+deems it necessary.
+The default value for an internal function, outside of storage, is to point to
+this designated invalid function.  In all other respects, these default values
+are encoded as above.
 
 *Remark*: Prior to Solidity 0.5.8 (or Solidity 0.4.26, in the 0.4.x line) there
 was a bug causing the default value for internal functions to be incorrectly

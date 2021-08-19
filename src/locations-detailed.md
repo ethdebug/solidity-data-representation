@@ -38,10 +38,11 @@ divided into stackframes; each stackframe begins with the return address.
 address.)  The exceptions are constructors and fallback/receive functions, which do not
 include a return address.  In addition, if the initial function call (i.e.
 stackframe) of the EVM stackframe (i.e. message call or creation call) is not a
-constructor or fallback/receive function, the function selector will be stored on the
-stack below the first stackframe.  (Additionally, in Solidity 0.4.20 and later,
-an extra zero word will appear below that on the stack if you're within a library
-call.)
+constructor, and the contract has external functions other than the constructor,
+fallback, and receive functions, then
+the function selector will be stored on the stack below the first
+stackframe.  (Additionally, in Solidity 0.4.20 and later, an extra zero word
+will appear below that on the stack if you're within a library call.)
 
 Note that function modifiers and base constructor invocations (whether placed
 on the constructor or on the contract) do not create new stackframes; these are
@@ -64,7 +65,9 @@ entered, and are not popped until the function, *including all modifiers*,
 exits.  It's necessary here to specify the order they go onto the stack.  First
 come the input parameters, in the order they were given, followed by the output
 parameters, in the order they were given.  Anonymous output parameters are
-treated the same as named output parameters for these purposes.
+treated the same as named output parameters for these purposes.  Similarly,
+parameters for fallback functions are not treated specially here, but work
+like any other parameters.
 
 *Remark*: Yul functions work slightly differently here, in that output parameters
 are pushed onto the stack in the *reverse* of the order they were given.
@@ -81,7 +84,8 @@ and are popped when that modifier exits.  Again, they go in the stack in the
 order they were given.  Note that (like other local variables declared in
 modifiers) these variables are still on the stack while the placeholder
 statement `_;` is running, even if they are inaccessible.  Remember that
-modifiers are run in order from left to right.
+modifiers are run in order from left to right, and that they may be applied
+to constructors, fallback functions, and receive functions.
 
 This leaves the case of parameters to base constructor invocations (whether on
 the constructor or on the contract).  When a constructor is called, not only
@@ -96,7 +100,9 @@ declaration matters here.  Within each base constructor's parameter region, the
 parameters are pushed on in order from left to right.  Constructors then
 execute in order from most base to most derived (again, note that the order
 they're listed on the constructor declaration has no effect); when a
-constructor exits, its parameters are popped from the stack.
+constructor exits, its parameters are popped from the stack.  Modifiers on a
+constructor or base constructor are handled when that constructor or base
+constructor runs.
 
 Paramters to a modifier on a fallback or receive function work like parameters
 to a modifier on any other function.  Note that parameters to a modifier on a
@@ -327,13 +333,13 @@ the length of `msg.data` stored?  The answer, of course, is that this length is
 what is returned by the `CALLDATASIZE` instruction.  This instruction could be
 considered something of a special location, and indeed many of the Solidity
 language's special [globally available
-variables](https://solidity.readthedocs.io/en/v0.7.1/units-and-global-variables.html)
+variables](https://docs.soliditylang.org/en/v0.8.7/units-and-global-variables.html)
 are "stored" in such special locations, each with their own EVM opcode.
 
 We have thus far ignored these special locations here and how they are encoded.
 However, since [the variables kept in these other special
-locations](https://solidity.readthedocs.io/en/v0.7.1/units-and-global-variables.html#block-and-transaction-properties)
-are all of type `uint256` or `address payable`; these special locations are
+locations](https://docs.soliditylang.org/en/v0.8.7/units-and-global-variables.html#block-and-transaction-properties)
+are all of type `uint256`, `address`, or `address payable`; these special locations are
 word-based rather than byte-based (to the extent that distinction is meaningful
 here); and values from these special locations will always be copied to the
 (also word-based) stack before use, there is little to say about encoding in
@@ -456,7 +462,7 @@ from "most base" to "most derived", and then, as mentioned above, lays out
 variables starting with the most base and ending with the most derived.
 (Remember that, when listing parent classes, Solidity considers parents listed
 *first* to be "more base"; as the [Solidity docs
-note](https://solidity.readthedocs.io/en/v0.7.1/contracts.html#multiple-inheritance-and-linearization),
+note](https://docs.soliditylang.org/en/v0.8.7/contracts.html#multiple-inheritance-and-linearization),
 this is the reverse order from, say, Python.)
 
 #### Storage: Direct types
