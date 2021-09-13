@@ -221,15 +221,18 @@ non-storage locations, they have a nonzero default value.  In contracts for
 which Solidity deems it necessary, there will be a special designated invalid
 function.  In Solidity 0.8.0 and later, this function throws a `Panic(0x51)`;
 in earlier versions of Solidity, it uses the `INVALID` opcode, reverting the
-transaction and consuming all available gas.  In Solidity 0.8.0 and later,
-this special function has the bytecode
+transaction and consuming all available gas.
+In versions of Solidity prior to 0.8.0, it has the bytecode `0x5bfe`; in Solidity
+0.8.0 to 0.8.4, it has the bytecode
 ```
 0x5b7f000000000000000000000000000000000000000000000000000000004e487b71600052605160045260246000fd
 ```
-and in earlier versions of Solidity,
-it has the bytecode `0x5bfe`.  As mentioned, it's only included if Solidity
+and in Solidity 0.8.5 and later, it is a function that just jumps directly to
+a function with the latter bytecode (this jumped-to function may also be identified
+by the fact that it is a generated Yul function with name `panic_error_0x51`).
+As mentioned, in all cases, such a function is only included if Solidity
 deems it necessary.
-The default value for an internal function, outside of storage, is to point to
+The default value for an internal function, then, outside of storage, is to point to
 this designated invalid function.  In all other respects, these default values
 are encoded as above.
 
