@@ -42,7 +42,9 @@ constructor, and the contract has external functions other than the constructor,
 fallback, and receive functions, then
 the function selector will be stored on the stack below the first
 stackframe.  (Additionally, in Solidity 0.4.20 and later, an extra zero word
-will appear below that on the stack if you're within a library call.)
+will appear below that on the stack if you're within a library call, unless the
+function called is `pure` or `view` and does not include any storage pointers
+in its input or output parameters.)
 
 Note that function modifiers and base constructor invocations (whether placed
 on the constructor or on the contract) do not create new stackframes; these are
