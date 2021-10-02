@@ -121,10 +121,11 @@ Once a contract has been deployed, its immutable state variables are stored in i
 Only direct types may go in code as immutables.  In addition, `function external`
 variables are currently barred from being used as immutables.
 
-Note that while code is a padded location, its padding works slightly unusually.
-In code, all types are zero-padded, even if ordinarily they would be sign-padded.
-Note that this does not alter whether they are padded on the right or on the left;
-that is still as normal.
+Note that while code is a padded location, prior to Solidity 0.8.9, its padding
+worked a bit unusually.  In code, all types would be zero-padded, even if
+ordinarily they would be sign-padded.  Note that this did not alter whether
+they are padded on the right or on the left.  Since Solidity 0.8.9, however,
+types in code are just padded normally.
 
 #### Code: data layout
 
@@ -164,11 +165,12 @@ Memory is a [padded location](#user-content-types-overview-overview-of-the-types
 direct types are padded as [described in their table](#user-content-types-overview-overview-of-the-types-direct-types-table-of-direct-types).
 Pointers, as mentioned above, always take up a full word.
 
-Note that immutables stored in memory have unusual padding; they are always
-zero-padded on the right, regardless of their usual padding.  Again, note that
-this only applies to immutables stored directly in memory during contract
-construct, and not to direct types appearing as elements of another type in
-memory in memory's normal use.
+Note that prior to Solidity 0.8.9, immutables stored in memory had unusual
+padding; they were always zero-padded on the right, regardless of their usual
+padding.  Again, note that this only applied to immutables stored directly in
+memory during contract construct, and not to direct types appearing as elements
+of another type in memory in memory's normal use.  Since Solidity 0.8.9, all
+direct types stored in memory, including immutables, have had normal padding.
 
 #### Layout of immutables in memory
 
@@ -180,8 +182,8 @@ Immutable state variables are stored one after the other starting at memory
 address `0x80` (skipping the first four words of memory as Solidity reserves
 these for internal purposes).  Memory being a padded location, each takes up
 one word (although note that as per the [previous
-subsection](#user-content-locations-in-detail-memory-in-detail-memory-direct-types-and-pointer-types)
-the padding on immutables is unusual).  This just leaves the question of the
+subsection](#user-content-locations-in-detail-memory-in-detail-memory-direct-types-and-pointer-types),
+the padding on immutables was unusual prior to Solidity 0.8.9).  This just leaves the question of the
 order that they are stored in.
 
 For the simple case of a contract without inheritance, the immutable state
@@ -473,6 +475,10 @@ The layout of direct types has already been described
 [above](#user-content-locations-in-detail-storage-in-detail-storage-data-layout), and the sizes of the direct types are found in the
 [direct types table](#user-content-types-overview-overview-of-the-types-direct-types-table-of-direct-types).  Note that there are [no pointer
 types in storage](#user-content-types-overview-overview-of-the-types-pointer-types).
+
+Note that in Solidity 0.8.8, there was a bug that caused user-defined value
+types to always take up a full word in storage, regardless of the size of the
+underlying type; values of these types would be padded as normal.
 
 #### Storage: Multivalue types
 
