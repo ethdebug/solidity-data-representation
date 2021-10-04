@@ -9,8 +9,8 @@ For writers of line debuggers and other debugging-related utilities.
 | Author | Harry Altman [@haltman-at] |
 | -----------:|:------------ |
 | Published | 2018-12-26 - Boxing Day |
-| Last revised | 2020-09-08 |
-| Copyright | 2018-2020 Truffle Blockchain Group |
+| Last revised | 2021-10-01 |
+| Copyright | 2018-2021 ConsenSys Software Inc |
 | License | <a rel="license" href="http://creativecommons.org/licenses/by/4.0/"><img alt="Creative Commons License" style="border-width:0" src="https://i.creativecommons.org/l/by/4.0/88x31.png" /></a> |
 | Document Source | [ethdebug/solidity-data-representation](https://github.com/ethdebug/solidity-data-representation) |
 
@@ -26,11 +26,10 @@ debugger that does such.  As such, other information about the type system or
 data layout that aren't necessary for that may be skipped; and where location
 is not entirely predictable but may be determined by other
 systems of the debugger, we may rely on that.  See the
-[Solidity documentation](https://solidity.readthedocs.io/) for things not
+[Solidity documentation](https://docs.soliditylang.org/) for things not
 covered here, particularly the
-[section on types](https://solidity.readthedocs.io/en/v0.7.1/solidity-in-depth.html),
-the [ABI specification](https://solidity.readthedocs.io/en/v0.7.1/abi-spec.html),
-and the [miscellaneous section](https://solidity.readthedocs.io/en/v0.7.1/miscellaneous.html);
+[section on types](https://docs.soliditylang.org/en/v0.8.9/types.html)
+and the [ABI specification](https://docs.soliditylang.org/en/v0.8.9/types.html);
 and perhaps also see the [Ethereum yellow paper](https://ethereum.github.io/yellowpaper/paper.pdf).
 
 This document is also primarily only concerned with variables that a user might
@@ -47,7 +46,7 @@ original value in calldata will always be copied onto the stack before use).
 Obviously the value still exists in calldata, but since no variable points
 there, it's not our concern.
 
-_**Note**: This document pertains to **Solidity v0.7.1**, current as of this
+_**Note**: This document pertains to **Solidity v0.8.9**, current as of this
 writing._
 
 
@@ -177,9 +176,6 @@ consider as a separate type here.)
 This will be our fourfold division of types.  Some other type terminology, as
 defined by the language, is useful:
 
-*Value types* are certain specific direct types; see the [table of direct
-types](#user-content-types-overview-overview-of-the-types-direct-types-table-of-direct-types) for a list of which ones.
-
 The term *reference types* refers collectively to multivalue and lookup types.
 
 A *static type* is either
@@ -193,13 +189,10 @@ type, since, after all, there are no element variables.)
 A *dynamic type* is any type that is not static.  (Pointers don't fit into this
 dichotomy, not being an actual Solidity type.)
 
-Then there are the *elementary types*, which are relevant to mappings.  See the
+We'll also use the term *key types* to denote types that can be used as
+mapping keys.  See the
 [section on lookup types](#user-content-types-overview-overview-of-the-types-lookup-types) for more on
 these.
-
-(*Warning*: The Solidity documentation uses the term "elementary type" in
-several conflicting ways.  Here, it will always refer to a type that can be used
-as the key for a mapping, and not any of the other meanings.)
 
 Finally, to avoid confusion with other meanings of the word "value", I'm going
 to speak of "keys and elements" rather than "keys and values"; I'm going to
@@ -306,52 +299,57 @@ properties.  Some of this information may not yet make sense if you have only
 read up to this point.  See the [next section](#user-content-types-overview-overview-of-the-types-direct-types-representations-of-direct-types)
 for more detail on how these types are actually represented.
 
-| Type                | Size in storage (bytes)                     | Padding in most padded locations        | Default value                             | Is value type? | Is elementary? | Allowed in calldata? | Allowed as immutable?|
-|---------------------|---------------------------------------------|-----------------------------------------|-------------------------------------------|----------------|----------------|----------------------|----------------------|
-| `bool`              | 1                                           | Zero-padded, left                       | `false`                                   | Yes            | Yes            | Yes                  | Yes                  |
-| `uintN`             | N/8                                         | Zero-padded, left\*                     | 0                                         | Yes            | Yes            | Yes                  | Yes                  |
-| `intN`              | N/8                                         | Sign-padded, left\*                     | 0                                         | Yes            | Yes            | Yes                  | Yes                  |
-| `address [payable]` | 20                                          | Zero-padded, left\*                     | Zero address (not valid!)                 | Yes            | Yes            | Yes                  | Yes                  |
-| `contract` types    | 20                                          | Zero-padded, left\*                     | Zero address (not valid!)                 | No             | Yes            | Yes                  | Yes                  |
-| `bytesN`            | N                                           | Zero-padded, right\*                    | All zeroes                                | Yes            | Yes            | Yes                  | Yes                  |
-| `enum` types        | As many as needed to hold all possibilities | Zero-padded, left                       | Whichever possibility is represented by 0 | Yes            | Yes            | Yes                  | Yes                  |
-| `function internal` | 8                                           | Zero-padded, left                       | Depends on location, but always invalid   | No             | No             | No                   | Yes                  |
-| `function external` | 24                                          | Zero-padded, right, except on the stack | Zero address, zero selector (not valid!)  | No             | No             | Yes                  | No                   |
-| `ufixedMxN`         | M/8                                         | Zero-padded, left\*                     | 0                                         | Yes            | Yes            | Yes                  | Yes                  |
-| `fixedMxN`          | M/8                                         | Sign-padded, left\*                     | 0                                         | Yes            | Yes            | Yes                  | Yes                  |
+| Type                     | Size in storage (bytes)                     | Padding in padded locations         | Default value                             | Is key type? | Allowed in calldata? | Allowed as immutable? | Can back a UDVT? |
+|--------------------------|---------------------------------------------|-------------------------------------|-------------------------------------------|--------------|----------------------|-----------------------|------------------|
+| `bool`                   | 1                                           | Zero padded, left                   | `false`                                   | Yes          | Yes                  | Yes                   | Yes              |
+| `uintN`                  | N/8                                         | Zero-padded, left\*                 | 0                                         | Yes          | Yes                  | Yes                   | Yes              |
+| `intN`                   | N/8                                         | Sign-padded, left\*                 | 0                                         | Yes          | Yes                  | Yes                   | Yes              |
+| `address [payable]`      | 20                                          | Zero-padded, left\*                 | Zero address (not valid!)                 | Yes          | Yes                  | Yes                   | Yes              |
+| `contract` types         | 20                                          | Zero-padded, left\*                 | Zero address (not valid!)                 | Yes          | Yes                  | Yes                   | Yes              |
+| `bytesN`                 | N                                           | Zero-padded, right\*                | All zeroes                                | Yes          | Yes                  | Yes                   | No               |
+| `enum` types             | As many as needed to hold all possibilities | Zero-padded, left                   | Whichever possibility is represented by 0 | Yes          | Yes                  | Yes                   | Yes              |
+| `function internal`      | 8                                           | Zero-padded, left                   | Depends on location, but always invalid   | No           | No                   | Yes                   | No               |
+| `function external`      | 24                                          | Zero-padded, right, except on stack | Zero address, zero selector (not valid!)  | No           | Yes                  | No                    | No               |
+| `ufixedMxN`              | M/8                                         | Zero-padded, left\*                 | 0                                         | Yes          | Yes                  | Yes                   | Yes              |
+| `fixedMxN`               | M/8                                         | Sign-padded, left\*                 | 0                                         | Yes          | Yes                  | Yes                   | Yes              |
+| User-defined value types | Same as underlying type (except in 0.8.8)   | Same as underlying type\*           | Same as underlying type                   | Yes          | Yes                  | Yes                   | No               |
 
 Some remarks:
 
 1. As the table states, external functions act a bit oddly on the stack; see the
    [section on the stack](#user-content-locations-in-detail-the-stack-in-detail-the-stack-direct-types-and-pointer-types)
    for details.
-2. Padding works a bit differently in code; in code, all types are zero-padded,
-   even if they would ordinarily be sign-padded.  This does not affect which side
-   they are padded on.
-3. Padding also works a bit differently for immutables stored in memory during contract
-   construction.  In this context, all types are zero-padded on the right,
-   regardless of their usual padding.
-4. Some types are marked with an asterisk regarding their padding.  These types
+2. In Solidity 0.8.8, there is a bug that caused user-defined value types to
+   always take up one full word in storage, regardless of the size of the
+   underlying type; they would be padded as if they were being stored in a
+   padded location.
+3. Prior to Solidity 0.8.9, padding worked a bit differently in code; in code, all types
+   were zero-padded, even if they would ordinarily be sign-padded.  This did not affect
+   which side they are padded on.
+4. Prior to Solidity 0.8.9, padding also worked a bit differently for immutables
+   stored in memory during contract construction.  In this context, all types
+   used to be zero-padded on the right, regardless of their usual padding.
+5. Some types are marked with an asterisk regarding their padding.  These types
    may have incorrect padding while on the stack due to operations that overflow.
    Solidity will always restore the correct padding when it is necessary to do so;
    however, it will not do this *until* it is necessary to do so.  So, be aware
    that on the stack these types may be padded incorrectly.
-5. The `ufixedMxN` and `fixedMxN` types are not implemented yet.  Their listed
+6. The `ufixedMxN` and `fixedMxN` types are not implemented yet.  Their listed
    properies are largely inferred based on what we can expect.
-6. Some direct types have aliases; these have not been listed in the above table.
+7. Some direct types have aliases; these have not been listed in the above table.
    `uint` and `int` are aliases for `uint256` and `int256`; `ufixed` and `fixed`
    for `ufixed128x18` and `fixed128x18`; and `byte` for `bytes1`.
-7. Each direct type's default value is simply whatever value is represented by
+8. Each direct type's default value is simply whatever value is represented by
    a string of all zero bytes, with the one exception of internal functions in
    locations other than storage.  See [below](#user-content-types-overview-overview-of-the-types-direct-types-representations-of-direct-types) for more on this.
-8. The `N` in `uintN` and `intN` must be a multiple of 8, from 8 to 256.  The
+9. The `N` in `uintN` and `intN` must be a multiple of 8, from 8 to 256.  The
    `M` in `ufixedMxN` and `fixedMxN` must be a multiple of 8, from 8 to 256,
    while `N` must be from 0 to 80.  The `N` in `bytesN` must be from 1 to 32.
-9. Function types are, of course, more complex than just their division into
-   `internal` and `external`; they also have input parameter types, output
-   parameter types, and mutability modifiers (`pure`, `view`, `payable`).
-   However, these will not concern us here, and we will ignore them.
-
+10. Function types are, of course, more complex than just their division into
+    `internal` and `external`; they also have input parameter types, output
+    parameter types, and mutability modifiers (`pure`, `view`, `payable`).
+    However, these will not concern us here, and we will ignore them.
+ 
 <a name="user-content-types-overview-overview-of-the-types-direct-types-representations-of-direct-types"></a>
 #### Representations of direct types
 
@@ -381,12 +379,22 @@ deployed code.
 For internal functions, default values are also worth discussing, as in
 non-storage locations, they have a nonzero default value.  In contracts for
 which Solidity deems it necessary, there will be a special designated invalid
-function which throws an `assert`-style exception (i.e. it reverts the
-transaction and consumes all available gas).  This special function has the
-bytecode `0x5bfe` (a `JUMPDEST` followed by an `INVALID`), but, as mentioned,
-is only included if Solidity deems it necessary.  The default value for an
-internal function, outside of storage, is to point to this designated invalid
-function.  Otherwise these are encoded as above.
+function.  In Solidity 0.8.0 and later, this function throws a `Panic(0x51)`;
+in earlier versions of Solidity, it uses the `INVALID` opcode, reverting the
+transaction and consuming all available gas.
+In versions of Solidity prior to 0.8.0, it has the bytecode `0x5bfe`; in Solidity
+0.8.0 to 0.8.4, it has the bytecode
+```
+0x5b7f000000000000000000000000000000000000000000000000000000004e487b71600052605160045260246000fd
+```
+and in Solidity 0.8.5 and later, it is a function that just jumps directly to
+a function with the latter bytecode (this jumped-to function may also be identified
+by the fact that it is a generated Yul function with name `panic_error_0x51`).
+As mentioned, in all cases, such a function is only included if Solidity
+deems it necessary.
+The default value for an internal function, then, outside of storage, is to point to
+this designated invalid function.  In all other respects, these default values
+are encoded as above.
 
 *Remark*: Prior to Solidity 0.5.8 (or Solidity 0.4.26, in the 0.4.x line) there
 was a bug causing the default value for internal functions to be incorrectly
@@ -402,6 +410,11 @@ See the [section on the stack](#user-content-locations-in-detail-the-stack-in-de
 `ufixedMxN` and `fixedMxN` are interpreted as follows: If interpreting as a
 (`M`-bit, big-endian) binary number (unsigned or signed as appropriate) would
 yield `k`, the result is interpreted as the rational number `k/10**N`.
+
+User-defined value types are always backed by another type (see the
+[table](#user-content-types-overview-overview-of-the-types-direct-types-table-of-direct-types)
+for which types are allowed in this context).  Their representation is the same
+as that of the underlying type.
 
 <a name="user-content-types-overview-overview-of-the-types-direct-types-presently-unstoreable-functions"></a>
 #### Presently unstoreable functions
@@ -480,15 +493,12 @@ meaningfully speak of its elements.
 
 As mentioned above, mappings can go only in storage (but [see previous
 section](#user-content-types-overview-overview-of-the-types-multivalue-types) about mappings in structs).
-The key type for a mapping must be an elementary type, which means either:
-
-1. Either a value type or a `contract` type, or
-2. One of `string` or `bytes`.
-
-Observe that elementary types may all be meaningfully converted to a string of
-bytes.  Also, as an alternative to the above definition, one may see the
-appropriate tables to see which [direct](#user-content-types-overview-overview-of-the-types-direct-types-table-of-direct-types) or
-[lookup](#user-content-types-overview-overview-of-the-types-lookup-types-table-of-lookup-types) types are elementary.
+Only certain types are allowed as key types for mappings; these can roughly
+be described as the "value types" together with `string` and `bytes`, but one should see
+the appropriate tables to see which [direct](#user-content-types-overview-overview-of-the-types-direct-types-table-of-direct-types) or
+[lookup](#user-content-types-overview-overview-of-the-types-lookup-types-table-of-lookup-types) types are key types.
+Observe that key types may all be meaningfully converted to a string of
+bytes.
 
 The default value for a lookup type is for it to be empty.  For the particular
 case of a `type[]` in memory, the default value once it has been initialized to
@@ -499,12 +509,12 @@ The information above is also summarized in the following table.
 <a name="user-content-types-overview-overview-of-the-types-lookup-types-table-of-lookup-types"></a>
 #### Table of lookup types
 
-| Type                              | Element type                                    | Restricted to storage? | Is elementary? |
-|-----------------------------------|-------------------------------------------------|------------------------|----------------|
-| `type[]`                          | `type`                                          | No                     | No             |
-| `mapping(keyType => elementType)` | `elementType`                                   | Yes                    | No             |
-| `bytes`                           | `byte` (`bytes1`)                               | No                     | Yes            |
-| `string`                          | N/A, but underlying `bytes` has `byte` elements | No                     | Yes            |
+| Type                              | Element type                                    | Restricted to storage? | Is key type? |
+|-----------------------------------|-------------------------------------------------|------------------------|--------------|
+| `type[]`                          | `type`                                          | No                     | No           |
+| `mapping(keyType => elementType)` | `elementType`                                   | Yes                    | No           |
+| `bytes`                           | `byte` (`bytes1`)                               | No                     | Yes          |
+| `string`                          | N/A, but underlying `bytes` has `byte` elements | No                     | Yes          |
 
 Note that mappings have other special features -- e.g., they cannot be copied or
 deleted -- but we will not go into that here.
@@ -629,10 +639,13 @@ divided into stackframes; each stackframe begins with the return address.
 address.)  The exceptions are constructors and fallback/receive functions, which do not
 include a return address.  In addition, if the initial function call (i.e.
 stackframe) of the EVM stackframe (i.e. message call or creation call) is not a
-constructor or fallback/receive function, the function selector will be stored on the
-stack below the first stackframe.  (Additionally, in Solidity 0.4.20 and later,
-an extra zero word will appear below that on the stack if you're within a library
-call.)
+constructor, and the contract has external functions other than the constructor,
+fallback, and receive functions, then
+the function selector will be stored on the stack below the first
+stackframe.  (Additionally, in Solidity 0.4.20 and later, an extra zero word
+will appear below that on the stack if you're within a library call, unless the
+function called is `pure` or `view` and does not include any storage pointers
+in its input or output parameters.)
 
 Note that function modifiers and base constructor invocations (whether placed
 on the constructor or on the contract) do not create new stackframes; these are
@@ -655,7 +668,9 @@ entered, and are not popped until the function, *including all modifiers*,
 exits.  It's necessary here to specify the order they go onto the stack.  First
 come the input parameters, in the order they were given, followed by the output
 parameters, in the order they were given.  Anonymous output parameters are
-treated the same as named output parameters for these purposes.
+treated the same as named output parameters for these purposes.  Similarly,
+parameters for fallback functions are not treated specially here, but work
+like any other parameters.
 
 *Remark*: Yul functions work slightly differently here, in that output parameters
 are pushed onto the stack in the *reverse* of the order they were given.
@@ -672,7 +687,8 @@ and are popped when that modifier exits.  Again, they go in the stack in the
 order they were given.  Note that (like other local variables declared in
 modifiers) these variables are still on the stack while the placeholder
 statement `_;` is running, even if they are inaccessible.  Remember that
-modifiers are run in order from left to right.
+modifiers are run in order from left to right, and that they may be applied
+to constructors, fallback functions, and receive functions.
 
 This leaves the case of parameters to base constructor invocations (whether on
 the constructor or on the contract).  When a constructor is called, not only
@@ -687,7 +703,9 @@ declaration matters here.  Within each base constructor's parameter region, the
 parameters are pushed on in order from left to right.  Constructors then
 execute in order from most base to most derived (again, note that the order
 they're listed on the constructor declaration has no effect); when a
-constructor exits, its parameters are popped from the stack.
+constructor exits, its parameters are popped from the stack.  Modifiers on a
+constructor or base constructor are handled when that constructor or base
+constructor runs.
 
 Paramters to a modifier on a fallback or receive function work like parameters
 to a modifier on any other function.  Note that parameters to a modifier on a
@@ -706,10 +724,11 @@ Once a contract has been deployed, its immutable state variables are stored in i
 Only direct types may go in code as immutables.  In addition, `function external`
 variables are currently barred from being used as immutables.
 
-Note that while code is a padded location, its padding works slightly unusually.
-In code, all types are zero-padded, even if ordinarily they would be sign-padded.
-Note that this does not alter whether they are padded on the right or on the left;
-that is still as normal.
+Note that while code is a padded location, prior to Solidity 0.8.9, its padding
+worked a bit unusually.  In code, all types would be zero-padded, even if
+ordinarily they would be sign-padded.  Note that this did not alter whether
+they are padded on the right or on the left.  Since Solidity 0.8.9, however,
+types in code are just padded normally.
 
 <a name="user-content-locations-in-detail-code-in-detail-code-data-layout"></a>
 #### Code: data layout
@@ -752,11 +771,12 @@ Memory is a [padded location](#user-content-types-overview-overview-of-the-types
 direct types are padded as [described in their table](#user-content-types-overview-overview-of-the-types-direct-types-table-of-direct-types).
 Pointers, as mentioned above, always take up a full word.
 
-Note that immutables stored in memory have unusual padding; they are always
-zero-padded on the right, regardless of their usual padding.  Again, note that
-this only applies to immutables stored directly in memory during contract
-construct, and not to direct types appearing as elements of another type in
-memory in memory's normal use.
+**Note that prior to Solidity 0.8.9**, immutables stored in memory had unusual
+padding; they were always zero-padded on the right, regardless of their usual
+padding.  Again, note that this only applied to immutables stored directly in
+memory during contract construct, and not to direct types appearing as elements
+of another type in memory in memory's normal use.  Since Solidity 0.8.9, all
+direct types stored in memory, including immutables, have had normal padding.
 
 <a name="user-content-locations-in-detail-memory-in-detail-layout-of-immutables-in-memory"></a>
 #### Layout of immutables in memory
@@ -769,8 +789,8 @@ Immutable state variables are stored one after the other starting at memory
 address `0x80` (skipping the first four words of memory as Solidity reserves
 these for internal purposes).  Memory being a padded location, each takes up
 one word (although note that as per the [previous
-subsection](#user-content-locations-in-detail-memory-in-detail-memory-direct-types-and-pointer-types)
-the padding on immutables is unusual).  This just leaves the question of the
+subsection](#user-content-locations-in-detail-memory-in-detail-memory-direct-types-and-pointer-types),
+the padding on immutables was unusual prior to Solidity 0.8.9).  This just leaves the question of the
 order that they are stored in.
 
 For the simple case of a contract without inheritance, the immutable state
@@ -782,7 +802,7 @@ from "most base" to "most derived", and then, as mentioned above, lays out
 variables starting with the most base and ending with the most derived.
 (Remember that, when listing parent classes, Solidity considers parents listed
 *first* to be "more base"; as the [Solidity docs
-note](https://solidity.readthedocs.io/en/v0.7.1/contracts.html#multiple-inheritance-and-linearization),
+note](https://docs.soliditylang.org/en/v0.8.9/contracts.html#multiple-inheritance-and-linearization),
 this is the reverse order from, say, Python.)
 
 <a name="user-content-locations-in-detail-memory-in-detail-memory-multivalue-types"></a>
@@ -932,13 +952,13 @@ the length of `msg.data` stored?  The answer, of course, is that this length is
 what is returned by the `CALLDATASIZE` instruction.  This instruction could be
 considered something of a special location, and indeed many of the Solidity
 language's special [globally available
-variables](https://solidity.readthedocs.io/en/v0.7.1/units-and-global-variables.html)
+variables](https://docs.soliditylang.org/en/v0.8.9/units-and-global-variables.html)
 are "stored" in such special locations, each with their own EVM opcode.
 
 We have thus far ignored these special locations here and how they are encoded.
 However, since [the variables kept in these other special
-locations](https://solidity.readthedocs.io/en/v0.7.1/units-and-global-variables.html#block-and-transaction-properties)
-are all of type `uint256` or `address payable`; these special locations are
+locations](https://docs.soliditylang.org/en/v0.8.9/units-and-global-variables.html#block-and-transaction-properties)
+are all of type `uint256`, `address`, or `address payable`; these special locations are
 word-based rather than byte-based (to the extent that distinction is meaningful
 here); and values from these special locations will always be copied to the
 (also word-based) stack before use, there is little to say about encoding in
@@ -1066,7 +1086,7 @@ from "most base" to "most derived", and then, as mentioned above, lays out
 variables starting with the most base and ending with the most derived.
 (Remember that, when listing parent classes, Solidity considers parents listed
 *first* to be "more base"; as the [Solidity docs
-note](https://solidity.readthedocs.io/en/v0.7.1/contracts.html#multiple-inheritance-and-linearization),
+note](https://docs.soliditylang.org/en/v0.8.9/contracts.html#multiple-inheritance-and-linearization),
 this is the reverse order from, say, Python.)
 
 <a name="user-content-locations-in-detail-storage-in-detail-storage-direct-types"></a>
@@ -1076,6 +1096,10 @@ The layout of direct types has already been described
 [above](#user-content-locations-in-detail-storage-in-detail-storage-data-layout), and the sizes of the direct types are found in the
 [direct types table](#user-content-types-overview-overview-of-the-types-direct-types-table-of-direct-types).  Note that there are [no pointer
 types in storage](#user-content-types-overview-overview-of-the-types-pointer-types).
+
+**Note that in Solidity 0.8.8**, there was a bug that caused user-defined value
+types to always take up a full word in storage, regardless of the size of the
+underlying type; values of these types would be padded as normal.
 
 <a name="user-content-locations-in-detail-storage-in-detail-storage-multivalue-types"></a>
 #### Storage: Multivalue types
@@ -1141,12 +1165,12 @@ what keys exist; keys that don't exist and keys whose corresponding element is
 For a mapping `map` and a key `key`, then, the element `map[key]` is stored
 starting at `keccak256(key . p)`, where `.` represents concatenation and `key`
 here has been converted to a string of bytes -- something that is meaningful
-for every [elementary type](#user-content-types-overview-overview-of-the-types-lookup-types) (the
-legal key types).  For the elementary types which are direct, the padded form
+for every [key type](#user-content-types-overview-overview-of-the-types-lookup-types).
+For the key types which are direct, the padded form
 is used; the value can be converted to a string of bytes by the representations
 listed in the [section on direct types](#user-content-types-overview-overview-of-the-types-direct-types-representations-of-direct-types),
 with the padding as listed in the [direct types table](#user-content-types-overview-overview-of-the-types-direct-types-table-of-direct-types);
-for the lookup elementary type `bytes` ([and `string`](#user-content-types-overview-overview-of-the-types-lookup-types)),
+for the lookup key type `bytes` ([and `string`](#user-content-types-overview-overview-of-the-types-lookup-types)),
 well, this by itself represents a string of bytes!  (No padding is applied to
 these.)  Similarly, the position `p` is regarded as a 32-byte unsigned integer,
 because that is how storage locations are accessed.
