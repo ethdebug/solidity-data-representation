@@ -165,7 +165,7 @@ Memory is a [padded location](#user-content-types-overview-overview-of-the-types
 direct types are padded as [described in their table](#user-content-types-overview-overview-of-the-types-direct-types-table-of-direct-types).
 Pointers, as mentioned above, always take up a full word.
 
-Note that prior to Solidity 0.8.9, immutables stored in memory had unusual
+**Note that prior to Solidity 0.8.9**, immutables stored in memory had unusual
 padding; they were always zero-padded on the right, regardless of their usual
 padding.  Again, note that this only applied to immutables stored directly in
 memory during contract construct, and not to direct types appearing as elements
