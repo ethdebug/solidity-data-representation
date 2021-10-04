@@ -476,7 +476,7 @@ The layout of direct types has already been described
 [direct types table](#user-content-types-overview-overview-of-the-types-direct-types-table-of-direct-types).  Note that there are [no pointer
 types in storage](#user-content-types-overview-overview-of-the-types-pointer-types).
 
-Note that in Solidity 0.8.8, there was a bug that caused user-defined value
+**Note that in Solidity 0.8.8**, there was a bug that caused user-defined value
 types to always take up a full word in storage, regardless of the size of the
 underlying type; values of these types would be padded as normal.
 
