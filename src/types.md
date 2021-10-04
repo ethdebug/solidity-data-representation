@@ -21,9 +21,6 @@ consider as a separate type here.)
 This will be our fourfold division of types.  Some other type terminology, as
 defined by the language, is useful:
 
-*Value types* are certain specific direct types; see the [table of direct
-types](#user-content-types-overview-overview-of-the-types-direct-types-table-of-direct-types) for a list of which ones.
-
 The term *reference types* refers collectively to multivalue and lookup types.
 
 A *static type* is either
@@ -37,13 +34,10 @@ type, since, after all, there are no element variables.)
 A *dynamic type* is any type that is not static.  (Pointers don't fit into this
 dichotomy, not being an actual Solidity type.)
 
-Then there are the *elementary types*, which are relevant to mappings.  See the
+We'll also use the term *key types* to denote types that can be used as
+mapping keys.  See the
 [section on lookup types](#user-content-types-overview-overview-of-the-types-lookup-types) for more on
 these.
-
-(*Warning*: The Solidity documentation uses the term "elementary type" in
-several conflicting ways.  Here, it will always refer to a type that can be used
-as the key for a mapping, and not any of the other meanings.)
 
 Finally, to avoid confusion with other meanings of the word "value", I'm going
 to speak of "keys and elements" rather than "keys and values"; I'm going to
@@ -145,52 +139,57 @@ properties.  Some of this information may not yet make sense if you have only
 read up to this point.  See the [next section](#user-content-types-overview-overview-of-the-types-direct-types-representations-of-direct-types)
 for more detail on how these types are actually represented.
 
-| Type                | Size in storage (bytes)                     | Padding in most padded locations        | Default value                             | Is value type? | Is elementary? | Allowed in calldata? | Allowed as immutable?|
-|---------------------|---------------------------------------------|-----------------------------------------|-------------------------------------------|----------------|----------------|----------------------|----------------------|
-| `bool`              | 1                                           | Zero-padded, left                       | `false`                                   | Yes            | Yes            | Yes                  | Yes                  |
-| `uintN`             | N/8                                         | Zero-padded, left\*                     | 0                                         | Yes            | Yes            | Yes                  | Yes                  |
-| `intN`              | N/8                                         | Sign-padded, left\*                     | 0                                         | Yes            | Yes            | Yes                  | Yes                  |
-| `address [payable]` | 20                                          | Zero-padded, left\*                     | Zero address (not valid!)                 | Yes            | Yes            | Yes                  | Yes                  |
-| `contract` types    | 20                                          | Zero-padded, left\*                     | Zero address (not valid!)                 | No             | Yes            | Yes                  | Yes                  |
-| `bytesN`            | N                                           | Zero-padded, right\*                    | All zeroes                                | Yes            | Yes            | Yes                  | Yes                  |
-| `enum` types        | As many as needed to hold all possibilities | Zero-padded, left                       | Whichever possibility is represented by 0 | Yes            | Yes            | Yes                  | Yes                  |
-| `function internal` | 8                                           | Zero-padded, left                       | Depends on location, but always invalid   | No             | No             | No                   | Yes                  |
-| `function external` | 24                                          | Zero-padded, right, except on the stack | Zero address, zero selector (not valid!)  | No             | No             | Yes                  | No                   |
-| `ufixedMxN`         | M/8                                         | Zero-padded, left\*                     | 0                                         | Yes            | Yes            | Yes                  | Yes                  |
-| `fixedMxN`          | M/8                                         | Sign-padded, left\*                     | 0                                         | Yes            | Yes            | Yes                  | Yes                  |
+| Type                     | Size in storage (bytes)                     | Padding in padded locations         | Default value                             | Is key type? | Allowed in calldata? | Allowed as immutable? | Can back a UDVT? |
+|--------------------------|---------------------------------------------|-------------------------------------|-------------------------------------------|--------------|----------------------|-----------------------|------------------|
+| `bool`                   | 1                                           | Zero padded, left                   | `false`                                   | Yes          | Yes                  | Yes                   | Yes              |
+| `uintN`                  | N/8                                         | Zero-padded, left\*                 | 0                                         | Yes          | Yes                  | Yes                   | Yes              |
+| `intN`                   | N/8                                         | Sign-padded, left\*                 | 0                                         | Yes          | Yes                  | Yes                   | Yes              |
+| `address [payable]`      | 20                                          | Zero-padded, left\*                 | Zero address (not valid!)                 | Yes          | Yes                  | Yes                   | Yes              |
+| `contract` types         | 20                                          | Zero-padded, left\*                 | Zero address (not valid!)                 | Yes          | Yes                  | Yes                   | Yes              |
+| `bytesN`                 | N                                           | Zero-padded, right\*                | All zeroes                                | Yes          | Yes                  | Yes                   | No               |
+| `enum` types             | As many as needed to hold all possibilities | Zero-padded, left                   | Whichever possibility is represented by 0 | Yes          | Yes                  | Yes                   | Yes              |
+| `function internal`      | 8                                           | Zero-padded, left                   | Depends on location, but always invalid   | No           | No                   | Yes                   | No               |
+| `function external`      | 24                                          | Zero-padded, right, except on stack | Zero address, zero selector (not valid!)  | No           | Yes                  | No                    | No               |
+| `ufixedMxN`              | M/8                                         | Zero-padded, left\*                 | 0                                         | Yes          | Yes                  | Yes                   | Yes              |
+| `fixedMxN`               | M/8                                         | Sign-padded, left\*                 | 0                                         | Yes          | Yes                  | Yes                   | Yes              |
+| User-defined value types | Same as underlying type (except in 0.8.8)   | Same as underlying type\*           | Same as underlying type                   | Yes          | Yes                  | Yes                   | No               |
 
 Some remarks:
 
 1. As the table states, external functions act a bit oddly on the stack; see the
    [section on the stack](#user-content-locations-in-detail-the-stack-in-detail-the-stack-direct-types-and-pointer-types)
    for details.
-2. Padding works a bit differently in code; in code, all types are zero-padded,
-   even if they would ordinarily be sign-padded.  This does not affect which side
-   they are padded on.
-3. Padding also works a bit differently for immutables stored in memory during contract
-   construction.  In this context, all types are zero-padded on the right,
-   regardless of their usual padding.
-4. Some types are marked with an asterisk regarding their padding.  These types
+2. In Solidity 0.8.8, there is a bug that caused user-defined value types to
+   always take up one full word in storage, regardless of the size of the
+   underlying type; they would be padded as if they were being stored in a
+   padded location.
+3. Prior to Solidity 0.8.9, padding worked a bit differently in code; in code, all types
+   were zero-padded, even if they would ordinarily be sign-padded.  This did not affect
+   which side they are padded on.
+4. Prior to Solidity 0.8.9, padding also worked a bit differently for immutables
+   stored in memory during contract construction.  In this context, all types
+   used to be zero-padded on the right, regardless of their usual padding.
+5. Some types are marked with an asterisk regarding their padding.  These types
    may have incorrect padding while on the stack due to operations that overflow.
    Solidity will always restore the correct padding when it is necessary to do so;
    however, it will not do this *until* it is necessary to do so.  So, be aware
    that on the stack these types may be padded incorrectly.
-5. The `ufixedMxN` and `fixedMxN` types are not implemented yet.  Their listed
+6. The `ufixedMxN` and `fixedMxN` types are not implemented yet.  Their listed
    properies are largely inferred based on what we can expect.
-6. Some direct types have aliases; these have not been listed in the above table.
+7. Some direct types have aliases; these have not been listed in the above table.
    `uint` and `int` are aliases for `uint256` and `int256`; `ufixed` and `fixed`
    for `ufixed128x18` and `fixed128x18`; and `byte` for `bytes1`.
-7. Each direct type's default value is simply whatever value is represented by
+8. Each direct type's default value is simply whatever value is represented by
    a string of all zero bytes, with the one exception of internal functions in
    locations other than storage.  See [below](#user-content-types-overview-overview-of-the-types-direct-types-representations-of-direct-types) for more on this.
-8. The `N` in `uintN` and `intN` must be a multiple of 8, from 8 to 256.  The
+9. The `N` in `uintN` and `intN` must be a multiple of 8, from 8 to 256.  The
    `M` in `ufixedMxN` and `fixedMxN` must be a multiple of 8, from 8 to 256,
    while `N` must be from 0 to 80.  The `N` in `bytesN` must be from 1 to 32.
-9. Function types are, of course, more complex than just their division into
-   `internal` and `external`; they also have input parameter types, output
-   parameter types, and mutability modifiers (`pure`, `view`, `payable`).
-   However, these will not concern us here, and we will ignore them.
-
+10. Function types are, of course, more complex than just their division into
+    `internal` and `external`; they also have input parameter types, output
+    parameter types, and mutability modifiers (`pure`, `view`, `payable`).
+    However, these will not concern us here, and we will ignore them.
+ 
 #### Representations of direct types
 
 `uintN` is an `N`-bit binary number (big-endian).  The signed variant `intN`
@@ -250,6 +249,11 @@ See the [section on the stack](#user-content-locations-in-detail-the-stack-in-de
 `ufixedMxN` and `fixedMxN` are interpreted as follows: If interpreting as a
 (`M`-bit, big-endian) binary number (unsigned or signed as appropriate) would
 yield `k`, the result is interpreted as the rational number `k/10**N`.
+
+User-defined value types are always backed by another type (see the
+[table](#user-content-types-overview-overview-of-the-types-direct-types-table-of-direct-types)
+for which types are allowed in this context).  Their representation is the same
+as that of the underlying type.
 
 #### Presently unstoreable functions
 
@@ -325,15 +329,12 @@ meaningfully speak of its elements.
 
 As mentioned above, mappings can go only in storage (but [see previous
 section](#user-content-types-overview-overview-of-the-types-multivalue-types) about mappings in structs).
-The key type for a mapping must be an elementary type, which means either:
-
-1. Either a value type or a `contract` type, or
-2. One of `string` or `bytes`.
-
-Observe that elementary types may all be meaningfully converted to a string of
-bytes.  Also, as an alternative to the above definition, one may see the
-appropriate tables to see which [direct](#user-content-types-overview-overview-of-the-types-direct-types-table-of-direct-types) or
-[lookup](#user-content-types-overview-overview-of-the-types-lookup-types-table-of-lookup-types) types are elementary.
+Only certain types are allowed as key types for mappings; these can roughly
+be described as the "value types" together with `string` and `bytes`, but one should see
+the appropriate tables to see which [direct](#user-content-types-overview-overview-of-the-types-direct-types-table-of-direct-types) or
+[lookup](#user-content-types-overview-overview-of-the-types-lookup-types-table-of-lookup-types) types are key types.
+Observe that key types may all be meaningfully converted to a string of
+bytes.
 
 The default value for a lookup type is for it to be empty.  For the particular
 case of a `type[]` in memory, the default value once it has been initialized to
@@ -343,12 +344,12 @@ The information above is also summarized in the following table.
 
 #### Table of lookup types
 
-| Type                              | Element type                                    | Restricted to storage? | Is elementary? |
-|-----------------------------------|-------------------------------------------------|------------------------|----------------|
-| `type[]`                          | `type`                                          | No                     | No             |
-| `mapping(keyType => elementType)` | `elementType`                                   | Yes                    | No             |
-| `bytes`                           | `byte` (`bytes1`)                               | No                     | Yes            |
-| `string`                          | N/A, but underlying `bytes` has `byte` elements | No                     | Yes            |
+| Type                              | Element type                                    | Restricted to storage? | Is key type? |
+|-----------------------------------|-------------------------------------------------|------------------------|--------------|
+| `type[]`                          | `type`                                          | No                     | No           |
+| `mapping(keyType => elementType)` | `elementType`                                   | Yes                    | No           |
+| `bytes`                           | `byte` (`bytes1`)                               | No                     | Yes          |
+| `string`                          | N/A, but underlying `bytes` has `byte` elements | No                     | Yes          |
 
 Note that mappings have other special features -- e.g., they cannot be copied or
 deleted -- but we will not go into that here.

@@ -42,7 +42,9 @@ constructor, and the contract has external functions other than the constructor,
 fallback, and receive functions, then
 the function selector will be stored on the stack below the first
 stackframe.  (Additionally, in Solidity 0.4.20 and later, an extra zero word
-will appear below that on the stack if you're within a library call.)
+will appear below that on the stack if you're within a library call, unless the
+function called is `pure` or `view` and does not include any storage pointers
+in its input or output parameters.)
 
 Note that function modifiers and base constructor invocations (whether placed
 on the constructor or on the contract) do not create new stackframes; these are
@@ -119,10 +121,11 @@ Once a contract has been deployed, its immutable state variables are stored in i
 Only direct types may go in code as immutables.  In addition, `function external`
 variables are currently barred from being used as immutables.
 
-Note that while code is a padded location, its padding works slightly unusually.
-In code, all types are zero-padded, even if ordinarily they would be sign-padded.
-Note that this does not alter whether they are padded on the right or on the left;
-that is still as normal.
+Note that while code is a padded location, prior to Solidity 0.8.9, its padding
+worked a bit unusually.  In code, all types would be zero-padded, even if
+ordinarily they would be sign-padded.  Note that this did not alter whether
+they are padded on the right or on the left.  Since Solidity 0.8.9, however,
+types in code are just padded normally.
 
 #### Code: data layout
 
@@ -162,11 +165,12 @@ Memory is a [padded location](#user-content-types-overview-overview-of-the-types
 direct types are padded as [described in their table](#user-content-types-overview-overview-of-the-types-direct-types-table-of-direct-types).
 Pointers, as mentioned above, always take up a full word.
 
-Note that immutables stored in memory have unusual padding; they are always
-zero-padded on the right, regardless of their usual padding.  Again, note that
-this only applies to immutables stored directly in memory during contract
-construct, and not to direct types appearing as elements of another type in
-memory in memory's normal use.
+**Note that prior to Solidity 0.8.9**, immutables stored in memory had unusual
+padding; they were always zero-padded on the right, regardless of their usual
+padding.  Again, note that this only applied to immutables stored directly in
+memory during contract construct, and not to direct types appearing as elements
+of another type in memory in memory's normal use.  Since Solidity 0.8.9, all
+direct types stored in memory, including immutables, have had normal padding.
 
 #### Layout of immutables in memory
 
@@ -178,8 +182,8 @@ Immutable state variables are stored one after the other starting at memory
 address `0x80` (skipping the first four words of memory as Solidity reserves
 these for internal purposes).  Memory being a padded location, each takes up
 one word (although note that as per the [previous
-subsection](#user-content-locations-in-detail-memory-in-detail-memory-direct-types-and-pointer-types)
-the padding on immutables is unusual).  This just leaves the question of the
+subsection](#user-content-locations-in-detail-memory-in-detail-memory-direct-types-and-pointer-types),
+the padding on immutables was unusual prior to Solidity 0.8.9).  This just leaves the question of the
 order that they are stored in.
 
 For the simple case of a contract without inheritance, the immutable state
@@ -191,7 +195,7 @@ from "most base" to "most derived", and then, as mentioned above, lays out
 variables starting with the most base and ending with the most derived.
 (Remember that, when listing parent classes, Solidity considers parents listed
 *first* to be "more base"; as the [Solidity docs
-note](https://solidity.readthedocs.io/en/v0.7.1/contracts.html#multiple-inheritance-and-linearization),
+note](https://docs.soliditylang.org/en/v0.8.9/contracts.html#multiple-inheritance-and-linearization),
 this is the reverse order from, say, Python.)
 
 #### Memory: Multivalue types
@@ -333,12 +337,12 @@ the length of `msg.data` stored?  The answer, of course, is that this length is
 what is returned by the `CALLDATASIZE` instruction.  This instruction could be
 considered something of a special location, and indeed many of the Solidity
 language's special [globally available
-variables](https://docs.soliditylang.org/en/v0.8.7/units-and-global-variables.html)
+variables](https://docs.soliditylang.org/en/v0.8.9/units-and-global-variables.html)
 are "stored" in such special locations, each with their own EVM opcode.
 
 We have thus far ignored these special locations here and how they are encoded.
 However, since [the variables kept in these other special
-locations](https://docs.soliditylang.org/en/v0.8.7/units-and-global-variables.html#block-and-transaction-properties)
+locations](https://docs.soliditylang.org/en/v0.8.9/units-and-global-variables.html#block-and-transaction-properties)
 are all of type `uint256`, `address`, or `address payable`; these special locations are
 word-based rather than byte-based (to the extent that distinction is meaningful
 here); and values from these special locations will always be copied to the
@@ -462,7 +466,7 @@ from "most base" to "most derived", and then, as mentioned above, lays out
 variables starting with the most base and ending with the most derived.
 (Remember that, when listing parent classes, Solidity considers parents listed
 *first* to be "more base"; as the [Solidity docs
-note](https://docs.soliditylang.org/en/v0.8.7/contracts.html#multiple-inheritance-and-linearization),
+note](https://docs.soliditylang.org/en/v0.8.9/contracts.html#multiple-inheritance-and-linearization),
 this is the reverse order from, say, Python.)
 
 #### Storage: Direct types
@@ -471,6 +475,10 @@ The layout of direct types has already been described
 [above](#user-content-locations-in-detail-storage-in-detail-storage-data-layout), and the sizes of the direct types are found in the
 [direct types table](#user-content-types-overview-overview-of-the-types-direct-types-table-of-direct-types).  Note that there are [no pointer
 types in storage](#user-content-types-overview-overview-of-the-types-pointer-types).
+
+**Note that in Solidity 0.8.8**, there was a bug that caused user-defined value
+types to always take up a full word in storage, regardless of the size of the
+underlying type; values of these types would be padded as normal.
 
 #### Storage: Multivalue types
 
@@ -534,12 +542,12 @@ what keys exist; keys that don't exist and keys whose corresponding element is
 For a mapping `map` and a key `key`, then, the element `map[key]` is stored
 starting at `keccak256(key . p)`, where `.` represents concatenation and `key`
 here has been converted to a string of bytes -- something that is meaningful
-for every [elementary type](#user-content-types-overview-overview-of-the-types-lookup-types) (the
-legal key types).  For the elementary types which are direct, the padded form
+for every [key type](#user-content-types-overview-overview-of-the-types-lookup-types).
+For the key types which are direct, the padded form
 is used; the value can be converted to a string of bytes by the representations
 listed in the [section on direct types](#user-content-types-overview-overview-of-the-types-direct-types-representations-of-direct-types),
 with the padding as listed in the [direct types table](#user-content-types-overview-overview-of-the-types-direct-types-table-of-direct-types);
-for the lookup elementary type `bytes` ([and `string`](#user-content-types-overview-overview-of-the-types-lookup-types)),
+for the lookup key type `bytes` ([and `string`](#user-content-types-overview-overview-of-the-types-lookup-types)),
 well, this by itself represents a string of bytes!  (No padding is applied to
 these.)  Similarly, the position `p` is regarded as a 32-byte unsigned integer,
 because that is how storage locations are accessed.
