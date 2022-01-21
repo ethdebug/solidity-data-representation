@@ -175,7 +175,7 @@ Some remarks:
    however, it will not do this *until* it is necessary to do so.  So, be aware
    that on the stack these types may be padded incorrectly.
 6. The `ufixedMxN` and `fixedMxN` types are not implemented yet.  Their listed
-   properies are largely inferred based on what we can expect.
+   properties are largely inferred based on what we can expect.
 7. Some direct types have aliases; these have not been listed in the above table.
    `uint` and `int` are aliases for `uint256` and `int256`; `ufixed` and `fixed`
    for `ufixed128x18` and `fixed128x18`; and `byte` for `bytes1`.
