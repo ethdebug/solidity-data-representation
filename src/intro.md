@@ -26,8 +26,8 @@ is not entirely predictable but may be determined by other
 systems of the debugger, we may rely on that.  See the
 [Solidity documentation](https://docs.soliditylang.org/) for things not
 covered here, particularly the
-[section on types](https://docs.soliditylang.org/en/v0.8.9/types.html)
-and the [ABI specification](https://docs.soliditylang.org/en/v0.8.9/types.html);
+[section on types](https://docs.soliditylang.org/en/v0.8.17/types.html)
+and the [ABI specification](https://docs.soliditylang.org/en/v0.8.17/types.html);
 and perhaps also see the [Ethereum yellow paper](https://ethereum.github.io/yellowpaper/paper.pdf).
 
 This document is also primarily only concerned with variables that a user might
