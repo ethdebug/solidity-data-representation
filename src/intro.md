@@ -8,8 +8,8 @@ For writers of line debuggers and other debugging-related utilities.
 | Author | Harry Altman [@haltman-at] |
 | -----------:|:------------ |
 | Published | 2018-12-26 - Boxing Day |
-| Last revised | 2021-10-01 |
-| Copyright | 2018-2021 ConsenSys Software Inc |
+| Last revised | 2022-10-10 |
+| Copyright | 2018-2022 ConsenSys Software Inc |
 | License | <a rel="license" href="http://creativecommons.org/licenses/by/4.0/"><img alt="Creative Commons License" style="border-width:0" src="https://i.creativecommons.org/l/by/4.0/88x31.png" /></a> |
 | Document Source | [ethdebug/solidity-data-representation](https://github.com/ethdebug/solidity-data-representation) |
 
@@ -26,8 +26,8 @@ is not entirely predictable but may be determined by other
 systems of the debugger, we may rely on that.  See the
 [Solidity documentation](https://docs.soliditylang.org/) for things not
 covered here, particularly the
-[section on types](https://docs.soliditylang.org/en/v0.8.9/types.html)
-and the [ABI specification](https://docs.soliditylang.org/en/v0.8.9/types.html);
+[section on types](https://docs.soliditylang.org/en/v0.8.17/types.html)
+and the [ABI specification](https://docs.soliditylang.org/en/v0.8.17/types.html);
 and perhaps also see the [Ethereum yellow paper](https://ethereum.github.io/yellowpaper/paper.pdf).
 
 This document is also primarily only concerned with variables that a user might
@@ -44,5 +44,5 @@ original value in calldata will always be copied onto the stack before use).
 Obviously the value still exists in calldata, but since no variable points
 there, it's not our concern.
 
-_**Note**: This document pertains to **Solidity v0.8.9**, current as of this
+_**Note**: This document pertains to **Solidity v0.8.17**, current as of this
 writing._
