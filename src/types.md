@@ -148,7 +148,7 @@ for more detail on how these types are actually represented.
 | `contract` types         | 20                                          | Zero-padded, left\*                 | Zero address (not valid!)                 | Yes          | Yes                  | Yes                   | Yes              |
 | `bytesN`                 | N                                           | Zero-padded, right\*                | All zeroes                                | Yes          | Yes                  | Yes                   | No               |
 | `enum` types             | As many as needed to hold all possibilities | Zero-padded, left                   | Whichever possibility is represented by 0 | Yes          | Yes                  | Yes                   | Yes              |
-| `function internal`      | 8                                           | Zero-padded, left                   | Depends on location, but always invalid   | No           | No                   | Yes                   | No               |
+| `function internal`      | 8                                           | Zero-padded, left                   | Depends, but always invalid               | No           | No                   | Yes                   | No               |
 | `function external`      | 24                                          | Zero-padded, right, except on stack | Zero address, zero selector (not valid!)  | No           | Yes                  | No                    | No               |
 | `ufixedMxN`              | M/8                                         | Zero-padded, left\*                 | 0                                         | Yes          | Yes                  | Yes                   | Yes              |
 | `fixedMxN`               | M/8                                         | Sign-padded, left\*                 | 0                                         | Yes          | Yes                  | Yes                   | Yes              |
@@ -181,7 +181,8 @@ Some remarks:
    for `ufixed128x18` and `fixed128x18`; and `byte` for `bytes1`.
 8. Each direct type's default value is simply whatever value is represented by
    a string of all zero bytes, with the one exception of internal functions in
-   locations other than storage.  See [below](#user-content-types-overview-overview-of-the-types-direct-types-representations-of-direct-types) for more on this.
+   locations other than storage for contracts not compiled with `viaIR` turned on.
+   See [below](#user-content-types-overview-overview-of-the-types-direct-types-representations-of-direct-types) for more on this.
 9. The `N` in `uintN` and `intN` must be a multiple of 8, from 8 to 256.  The
    `M` in `ufixedMxN` and `fixedMxN` must be a multiple of 8, from 8 to 256,
    while `N` must be from 0 to 80.  The `N` in `bytesN` must be from 1 to 32.
@@ -207,21 +208,28 @@ Enums are represented by integers; the possibility listed first by `0`, the next
 by `1`, and so forth.  An enum type just acts like `uintN`, where `N` is the
 smallest legal value large enough to accomodate all the possibilities.
 
-Internal functions may be represented in one of two ways.  The bottom 4 bytes
+Internal functions use one of multiple representations depending on compilation
+settings and context.  For contracts compiled with `viaIR`, the representation
+consists of an abstract numeric index.  Predicting these indices is currently
+a bit difficult.  However, valid functions will get nonzero indices; index zero
+is reserved for the designated invalid function (see below).
+
+For contracts not compiled with `viaIR`, the bottom 4 bytes of an internal function are
 represented by the code address (in bytes from the beginning of code) of the
 beginning of said function (specifically, the `JUMPDEST` instruction that
-begins it).  If the value was set outside a constructor, the 4 bytes above that
-will be 0.  However, inside a constructor, the 4 bytes above that will instead
-be the code address of the function inside the constructor code rather than the
-deployed code.
+begins it) within the deployed bytecode.  If the value was set outside a constructor, the 4 bytes above that
+will be 0.  However, if it was set inside a constructor, the 4 bytes above that will instead
+be the code address of the function inside the constructor bytecode.
 
-For internal functions, default values are also worth discussing, as in
-non-storage locations, they have a nonzero default value.  In contracts for
+For internal functions, default values are also worth discussing.  For contracts
+not compiled with `viaIR`, these variables have a nonzero default value
+in locations other than storage.  In contracts for
 which Solidity deems it necessary, there will be a special designated invalid
 function.  In Solidity 0.8.0 and later, this function throws a `Panic(0x51)`;
 in earlier versions of Solidity, it uses the `INVALID` opcode, reverting the
 transaction and consuming all available gas.
-In versions of Solidity prior to 0.8.0, it has the bytecode `0x5bfe`; in Solidity
+
+In versions of Solidity prior to 0.8.0, this designated invalid function has the bytecode `0x5bfe`; in Solidity
 0.8.0 to 0.8.4, it has the bytecode
 ```
 0x5b7f000000000000000000000000000000000000000000000000000000004e487b71600052605160045260246000fd
@@ -231,9 +239,12 @@ a function with the latter bytecode (this jumped-to function may also be identif
 by the fact that it is a generated Yul function with name `panic_error_0x51`).
 As mentioned, in all cases, such a function is only included if Solidity
 deems it necessary.
-The default value for an internal function, then, outside of storage, is to point to
+
+For contracts compiled without `viaIR`, then, the default value for an internal function
+in a non-storage location is
 this designated invalid function.  In all other respects, these default values
-are encoded as above.
+are encoded as above.  (For a contract compiled with `viaIR`, or for an internal
+function in storage, the default value is zero.)
 
 *Remark*: Prior to Solidity 0.5.8 (or Solidity 0.4.26, in the 0.4.x line) there
 was a bug causing the default value for internal functions to be incorrectly
