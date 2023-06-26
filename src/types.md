@@ -210,9 +210,12 @@ smallest legal value large enough to accomodate all the possibilities.
 
 Internal functions use one of multiple representations depending on compilation
 settings and context.  For contracts compiled with `viaIR`, the representation
-consists of an abstract numeric index.  Predicting these indices is currently
-a bit difficult.  However, valid functions will get nonzero indices; index zero
-is reserved for the designated invalid function (see below).
+consists of an abstract numeric index.  As of Solidity 0.8.20, the function
+indices for a given contract can be found in the `internalFunctionIDs` field of
+the `ContractDefinition` node for that contract in the AST; however, in earlier
+versions determining these indices may be difficult.  Note that valid functions
+get nonzero indices; index zero is reserved for the designated invalid function
+(see below).
 
 For contracts not compiled with `viaIR`, the bottom 4 bytes of an internal function are
 represented by the code address (in bytes from the beginning of code) of the
