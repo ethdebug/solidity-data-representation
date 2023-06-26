@@ -195,7 +195,7 @@ from "most base" to "most derived", and then, as mentioned above, lays out
 variables starting with the most base and ending with the most derived.
 (Remember that, when listing parent classes, Solidity considers parents listed
 *first* to be "more base"; as the [Solidity docs
-note](https://docs.soliditylang.org/en/v0.8.17/contracts.html#multiple-inheritance-and-linearization),
+note](https://docs.soliditylang.org/en/v0.8.20/contracts.html#multiple-inheritance-and-linearization),
 this is the reverse order from, say, Python.)
 
 #### Memory: Multivalue types
@@ -337,12 +337,12 @@ the length of `msg.data` stored?  The answer, of course, is that this length is
 what is returned by the `CALLDATASIZE` instruction.  This instruction could be
 considered something of a special location, and indeed many of the Solidity
 language's special [globally available
-variables](https://docs.soliditylang.org/en/v0.8.17/units-and-global-variables.html)
+variables](https://docs.soliditylang.org/en/v0.8.20/units-and-global-variables.html)
 are "stored" in such special locations, each with their own EVM opcode.
 
 We have thus far ignored these special locations here and how they are encoded.
 However, since [the variables kept in these other special
-locations](https://docs.soliditylang.org/en/v0.8.17/units-and-global-variables.html#block-and-transaction-properties)
+locations](https://docs.soliditylang.org/en/v0.8.20/units-and-global-variables.html#block-and-transaction-properties)
 are all of type `uint256`, `address`, or `address payable`; these special locations are
 word-based rather than byte-based (to the extent that distinction is meaningful
 here); and values from these special locations will always be copied to the
@@ -466,7 +466,7 @@ from "most base" to "most derived", and then, as mentioned above, lays out
 variables starting with the most base and ending with the most derived.
 (Remember that, when listing parent classes, Solidity considers parents listed
 *first* to be "more base"; as the [Solidity docs
-note](https://docs.soliditylang.org/en/v0.8.17/contracts.html#multiple-inheritance-and-linearization),
+note](https://docs.soliditylang.org/en/v0.8.20/contracts.html#multiple-inheritance-and-linearization),
 this is the reverse order from, say, Python.)
 
 #### Storage: Direct types
